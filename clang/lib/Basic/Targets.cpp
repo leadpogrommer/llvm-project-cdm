@@ -13,6 +13,7 @@
 
 #include "Targets.h"
 
+#include "Targets/CDM.h"
 #include "Targets/AArch64.h"
 #include "Targets/AMDGPU.h"
 #include "Targets/ARC.h"
@@ -117,6 +118,8 @@ std::unique_ptr<TargetInfo> AllocateTarget(const llvm::Triple &Triple,
   default:
     return nullptr;
 
+  case llvm::Triple::cdm:
+    return std::make_unique<CDMTargetInfo>(Triple, Opts);
   case llvm::Triple::arc:
     return std::make_unique<ARCTargetInfo>(Triple, Opts);
 

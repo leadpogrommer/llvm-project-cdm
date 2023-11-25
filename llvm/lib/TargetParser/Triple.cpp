@@ -25,6 +25,7 @@ StringRef Triple::getArchTypeName(ArchType Kind) {
   switch (Kind) {
   case UnknownArch:    return "unknown";
 
+  case cdm:            return "cdm";
   case aarch64:        return "aarch64";
   case aarch64_32:     return "aarch64_32";
   case aarch64_be:     return "aarch64_be";
@@ -501,6 +502,7 @@ static Triple::ArchType parseARMArch(StringRef ArchName) {
 
 static Triple::ArchType parseArch(StringRef ArchName) {
   auto AT = StringSwitch<Triple::ArchType>(ArchName)
+      .Case("cdm", Triple::cdm)
     .Cases("i386", "i486", "i586", "i686", Triple::x86)
     // FIXME: Do we need to support these?
     .Cases("i786", "i886", "i986", Triple::x86)
@@ -847,6 +849,7 @@ static Triple::ObjectFormatType getDefaultFormat(const Triple &T) {
     default:
       return T.isOSDarwin() ? Triple::MachO : Triple::ELF;
     }
+  case Triple::cdm:
   case Triple::aarch64_be:
   case Triple::amdgcn:
   case Triple::amdil64:
@@ -1465,6 +1468,7 @@ unsigned Triple::getArchPointerBitWidth(llvm::Triple::ArchType Arch) {
   case llvm::Triple::UnknownArch:
     return 0;
 
+  case llvm::Triple::cdm:
   case llvm::Triple::avr:
   case llvm::Triple::msp430:
     return 16;
@@ -1550,6 +1554,7 @@ bool Triple::isArch16Bit() const {
 Triple Triple::get32BitArchVariant() const {
   Triple T(*this);
   switch (getArch()) {
+  case Triple::cdm:
   case Triple::UnknownArch:
   case Triple::amdgcn:
   case Triple::avr:
@@ -1631,6 +1636,7 @@ Triple Triple::get32BitArchVariant() const {
 Triple Triple::get64BitArchVariant() const {
   Triple T(*this);
   switch (getArch()) {
+  case Triple::cdm:
   case Triple::UnknownArch:
   case Triple::arc:
   case Triple::avr:
