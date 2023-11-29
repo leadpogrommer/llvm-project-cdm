@@ -1,3 +1,11 @@
+// custom SDnode for return
+
+def SDT_Cpu0Ret          : SDTypeProfile<0, 1, [SDTCisInt<0>]>;
+def CDMRet               : SDNode<"CDMISD::Ret", SDTNone, [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
+
+
+def addr: ComplexPattern<iPTR, 2, "SelectAddr", [frameindex], [SDNPWantParent]>;
+
 class CDMInst<dag outs, dag ins, string asmstr, list<dag> pattern>: Instruction
 {
   // Inst and Size: for tablegen(... -gen-emitter) and 
@@ -16,6 +24,12 @@ class CDMInst<dag outs, dag ins, string asmstr, list<dag> pattern>: Instruction
   // TODO: right now we don't need opcodes and stuff
 }
 
+class CDMPseudo<dag outs, dag ins, string asmstr, list<dag> pattern>:
+      CDMInst<outs, ins, asmstr, pattern> {
+  let isCodeGenOnly = 1;
+  let isPseudo = 1;
+}
+
 class arithLogicR<string asm_instr, SDNode OpNode, bit isComm = 0>:
   CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs0, CPURegs:$rs1),
           !strconcat(asm_instr, " $rs0, $rs1, $rd"),
@@ -25,5 +39,79 @@ class arithLogicR<string asm_instr, SDNode OpNode, bit isComm = 0>:
           }
 
 
+// load
+class AlignedLoad<PatFrag Node> :
+  PatFrag<(ops node:$ptr), (Node node:$ptr), [{
+  LoadSDNode *LD = cast<LoadSDNode>(N);
+  return LD->getMemoryVT().getSizeInBits()/8 <= LD->getAlign().value();
+}]>;
+class AlignedStore<PatFrag Node> :
+  PatFrag<(ops node:$val, node:$ptr), (Node node:$val, node:$ptr), [{
+  StoreSDNode *SD = cast<StoreSDNode>(N);
+  return SD->getMemoryVT().getSizeInBits()/8 <= SD->getAlign().value();
+}]>;
+
+
+def load_a          : AlignedLoad<load>;
+def store_a         : AlignedStore<store>;
+
+class LoadMStack<string instr_asm, PatFrag OpNode, Operand MemOperand, bit Pseudo>: 
+    CDMInst<(outs CPURegs:$ra), (ins MemOperand:$addr), 
+      !strconcat(instr_asm, "\t$ra, $addr"),
+      [(set CPURegs:$ra,(OpNode addr:$addr))]>{
+        let isPseudo = Pseudo;
+      }
+
+class StoreMStack<string instr_asm, PatFrag OpNode, Operand MemOperand, bit Pseudo>:
+    CDMInst<(outs), (ins CPURegs:$ra, MemOperand:$addr),
+            !strconcat(instr_asm, "\t$ra, $addr"),
+            [(OpNode CPURegs:$ra, addr:$addr)]>{
+              let isPseudo = Pseudo;
+            }
+
+def simm16      : Operand<i16> {
+
+}
+
+// def uimm16: Operand<ui16>{
+
+// }
+
+def mem : Operand<iPTR> {
+  let PrintMethod = "printMemOperand";
+  // Why not more(GRPOUT)
+  let MIOperandInfo = (ops CPURegs, simm16);
+  let EncoderMethod = "getMemEncoding";
+}
+
+def lsw : LoadMStack<"lsw", load_a, mem, 0>;
+// store
+def ssw: StoreMStack<"ssw", store_a, mem, 0>;
+
+
+// ldi
+
+def imm16: PatLeaf<(imm), [{return isInt<16>(N->getValue());}]>;
+class LoadImm<Operand Imm>:
+  CDMInst<(outs CPURegs:$ra), (ins Imm:$imm),
+  "ldi\t$ra, $imm", []>{
+    // TODO; what is this?
+    let isReMaterializable = 1;
+  }
+
+def ldi: LoadImm<simm16>;
+
+
+let isReturn=1, isTerminator=1, isBarrier=1, hasCtrlDep=1 in
+  def Ret : CDMPseudo<(outs), (ins), "", [(CDMRet)]>;
+
 
 def ADD: arithLogicR<"add", add, 1>;
+
+/*
+ TODO: RET, RetLR
+ LD: LoadM32 -> LoadM -> FMem -> FL -> CpuoInst -> Instruction
+ My LD: LoadM32 -> LoadM -> CDMInst
+*/
+
+def my_cool_pat_for_ldi: Pat<(i16 imm:$imm),(ldi imm:$imm)>;

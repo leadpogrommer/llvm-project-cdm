@@ -21,7 +21,7 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeCDMTarget() {
 static std::string computeDataLayout() {
   // XXX Build the triple from the arguments.
   // This is hard-coded for now for this example target.
-  return "e-S16-p:16:16-i8:8-i16:8-m:e-n16";
+  return "e-S16-p:16:16-i8:8-i16:16-m:e-n16";
 }
 
 CDMTargetMachine::CDMTargetMachine(const Target &T, const Triple &TT,

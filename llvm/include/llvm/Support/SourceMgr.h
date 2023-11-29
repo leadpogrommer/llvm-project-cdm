@@ -150,6 +150,26 @@ public:
     return Buffers.size();
   }
 
+  // horrible hack
+  void SwapMainBuffer(int Target){
+    std::vector<SrcBuffer> NewBuffers;
+    unsigned int PrevMain = getMainFileID() - 1;
+    unsigned int CurMain = Target - 1;
+
+    for(unsigned int I = 0; I < Buffers.size(); I++){
+      if(I == PrevMain){
+        NewBuffers.push_back(std::move(Buffers[CurMain]));
+      } else if (I == CurMain){
+        NewBuffers.push_back(std::move(Buffers[PrevMain]));
+      } else {
+        NewBuffers.push_back(std::move(Buffers[I]));
+      }
+    }
+
+    Buffers.swap(NewBuffers);
+  }
+  // end of horrible hack
+
   /// Takes the source buffers from the given source manager and append them to
   /// the current manager. `MainBufferIncludeLoc` is an optional include
   /// location to attach to the main buffer of `SrcMgr` after it gets moved to

@@ -24,6 +24,8 @@
 #include "llvm/TableGen/Parser.h"
 #include "llvm/TableGen/Record.h"
 #include <optional>
+#include <set>
+#include <thread>
 
 using namespace mlir;
 
@@ -259,6 +261,10 @@ void TableGenIndex::initialize(const llvm::RecordKeeper &records) {
     const char *startLoc = refLoc.Start.getPointer();
     const char *endLoc = refLoc.End.getPointer();
 
+    if(memcmp(startLoc, "ProcessorItineraries", 18) == 0){
+      lsp::Logger::info("d");
+    }
+
     // If the location we got was empty, try to lex a token from the start
     // location.
     if (startLoc == endLoc) {
@@ -289,6 +295,9 @@ void TableGenIndex::initialize(const llvm::RecordKeeper &records) {
   for (const llvm::Record &def : llvm::concat<llvm::Record>(classes, defs)) {
     auto *sym = getOrInsertDef(&def);
     insertRef(sym, sym->defLoc, /*isDef=*/true);
+    if(def.getName() == "CallingConv"){
+      def.dump();
+    }
 
     // Add references to the definition.
     for (SMLoc loc : def.getLoc().drop_front())
@@ -444,7 +453,6 @@ void TableGenTextFile::initialize(const lsp::URIForFile &uri,
     return;
   }
   sourceMgr.setIncludeDirs(includeDirs);
-  sourceMgr.AddNewSourceBuffer(std::move(memBuffer), SMLoc());
 
   // This class provides a context argument for the llvm::SourceMgr diagnostic
   // handler.
@@ -461,14 +469,85 @@ void TableGenTextFile::initialize(const lsp::URIForFile &uri,
           ctx->diagnostics.push_back(*lspDiag);
       },
       &handlerContext);
-  bool failedToParse = llvm::TableGenParseFile(sourceMgr, *recordKeeper);
+//  sourceMgr.get
+
+  // TODO: don't hardcode this
+//  llvm::sys::path::
+  bool allFuckedUp = false;
+  auto kostylPath = "/home/ilya/work/cdm_clang/llvm-project/llvm/lib/Target/CDM";
+  if((llvm::sys::path::parent_path(uri.file()) == kostylPath)
+      && uri.file() != "/home/ilya/work/cdm_clang/llvm-project/llvm/lib/Target/CDM/CDM.td"){
+    allFuckedUp = true;
+    // add CDM.td as main buffer
+    volatile bool isBeingFucked = false;
+//    while (!isBeingFucked){
+//      std::this_thread::sleep_for(std::chrono::milliseconds(333));
+//    }
+    lsp::Logger::info("Fuck me");
+    auto fuck = llvm::MemoryBuffer::getFile("/home/ilya/work/cdm_clang/llvm-project/llvm/lib/Target/CDM/CDM.td");
+    lsp::Logger::info("Fuck {0}", fuck.operator bool());
+//    sourceMgr.AddNewSourceBuffer(std::move(fuck.get()), SMLoc::getFromPointer(fuckingBufferPtr));
+
+//    auto newSourceMgr = llvm::SourceMgr();
+//    newSourceMgr.setIncludeDirs(includeDirs);
+    sourceMgr.AddNewSourceBuffer(std::move(fuck.get()), SMLoc());
+//    newSourceMgr.setDiagHandler(sourceMgr.getDiagHandler(), sourceMgr.getDiagContext());
+    bool failedToParseRealMain = llvm::TableGenParseFile(sourceMgr, *recordKeeper);
+//    sourceMgr.takeSourceBuffersFrom(newSourceMgr);
+    // TODO: swap buffers in sourcemgr
+    if(failedToParseRealMain){
+      lsp::Logger::error("Failed to parse real main, cowardly returning");
+      return;
+    }
+
+    for(int i = 1; i <= sourceMgr.getNumBuffers(); i++){
+      if(uri.file().ends_with(sourceMgr.getMemoryBuffer(i)->getBufferIdentifier())){
+        sourceMgr.SwapMainBuffer(i);
+      }
+    }
+
+    recordKeeper->saveInputFilename(sourceMgr.getMemoryBuffer(sourceMgr.getMainFileID())->getBufferIdentifier().str());
+  } else {
+    sourceMgr.AddNewSourceBuffer(std::move(memBuffer), SMLoc());
+  }
+//  if(llvm::sys::path::parent_path(uri.file()))
+
+
+  bool failedToParse = false;
+  if(!allFuckedUp){
+    failedToParse = llvm::TableGenParseFile(sourceMgr, *recordKeeper);
+
+  }
 
   // Process all of the include files.
   lsp::gatherIncludeFiles(sourceMgr, parsedIncludes);
   if (failedToParse)
     return;
 
+//  for(int i = 0; i < parsedIncludes.size(); i++){
+//    lsp::Logger::info("!!! Parsed include: {0}", parsedIncludes[i].uri);
+//  }
+
   // If we successfully parsed the file, we can now build the index.
+  auto classes =
+      llvm::make_pointee_range(llvm::make_second_range(recordKeeper->getClasses()));
+  auto defs =
+      llvm::make_pointee_range(llvm::make_second_range(recordKeeper->getDefs()));
+
+  std::set<std::string> pathes;
+  for (const llvm::Record &def : llvm::concat<llvm::Record>(classes, defs)) {
+    auto str = sourceMgr.getMemoryBuffer(sourceMgr.FindBufferContainingLoc(def.getLoc().front()))->getBufferIdentifier().str();
+    pathes.insert(str);
+    if(str == "/home/ilya/work/cdm_clang/llvm-project/llvm/lib/Target/CDM/CDM.td"){
+      lsp::Logger::info("Cool def: {0}", def.getName());
+    }
+  }
+
+  for(auto path: pathes){
+    lsp::Logger::info("Record path: {0}", path);
+  }
+
+
   index.initialize(*recordKeeper);
 }
 
