@@ -28,3 +28,7 @@ void CDMInstPrinter::printInst(const MCInst *MI, uint64_t Address,
   // TODO: implement this
   O << "TODO: implement this";
 }
+void CDMInstPrinter::printMemOperand(const MCInst *MI, unsigned int OpNo,
+                                     raw_ostream &O) {
+  O << "TODO: mem operand";
+}

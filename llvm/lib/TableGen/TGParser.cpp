@@ -723,6 +723,12 @@ Record *TGParser::ParseClassID() {
     Result->appendReferenceLoc(Lex.getLocRange());
   }
 
+//  if(Result){
+//    if(Result->getNameInitAsString() == "CallingConv"){
+//      Result->dump();
+//    }
+//  }
+
   Lex.Lex();
   return Result;
 }

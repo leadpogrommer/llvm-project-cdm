@@ -21,9 +21,22 @@ public:
   const CDMRegisterInfo &getRegisterInfo() const {
     return RI;
   }
+  void storeRegToStackSlot(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
+                           Register SrcReg, bool isKill, int FI,
+                           const TargetRegisterClass *RC, const TargetRegisterInfo *TRI,
+                           Register VReg) const override;
+  void loadRegFromStackSlot(MachineBasicBlock &MBB,
+                            MachineBasicBlock::iterator MI, Register DestReg,
+                            int FrameIndex, const TargetRegisterClass *RC,
+                            const TargetRegisterInfo *TRI,
+                            Register VReg) const override;
 
 private:
   const CDMRegisterInfo RI;
+
+
+  MachineMemOperand *GetMemOperand(MachineBasicBlock &MBB, int FI,
+                               MachineMemOperand::Flags Flags) const;
 };
 
 } // namespace llvm

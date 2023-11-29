@@ -25,7 +25,7 @@ SDValue CDMISelLowering::LowerFormalArguments(SDValue Chain, CallingConv::ID Cal
                                               SmallVectorImpl<SDValue> &InVals) const {
   auto &MF = DAG.getMachineFunction();
   auto &MFI = MF.getFrameInfo();
-  MF.dump();
+//  MF.dump();
 //  CDMFunctionInfo *CDMFI = MF.getInfo<CDMFunctionInfo>();
 //
 //  SmallVector<CCValAssign, 16> ArgLocs;

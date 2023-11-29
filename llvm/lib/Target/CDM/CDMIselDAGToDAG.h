@@ -18,14 +18,18 @@ class CDMDagToDagIsel : public  SelectionDAGISel {
 public:
   static char ID;
 
-  explicit CDMDagToDagIsel(CDMTargetMachine &TM):
-                                                                         SelectionDAGISel(ID, TM){}
+  explicit CDMDagToDagIsel(CDMTargetMachine &TM): SelectionDAGISel(ID, TM){}
+
+
   StringRef getPassName() const override;
+  bool runOnMachineFunction(MachineFunction &MF) override;
 
 private:
   #include "CDMGenDAGISel.inc"
 
   void Select(SDNode *N) override;
+  bool trySelect(SDNode *Node);
+  bool SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset);
 };
 
 FunctionPass *createCDMISelDag(CDMTargetMachine &TM, CodeGenOpt::Level OptLevel);

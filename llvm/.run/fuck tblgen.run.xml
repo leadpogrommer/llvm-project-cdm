@@ -1,0 +1,7 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="fuck tblgen" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-gen-dag-isel -I $PROJECT_DIR$/lib/Target/CDM -I/home/ilya/work/cdm_clang/llvm-project/llvm/cmake-build-debug-clang/include -I/home/ilya/work/cdm_clang/llvm-project/llvm/include -I $PROJECT_DIR$/lib/Target $PROJECT_DIR$/lib/Target/CDM/CDM.td --write-if-changed -o lib/Target/CDM/CDMGenDAGISel.inc -d lib/Target/CDM/CDMGenDAGISel.inc.d" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$/cmake-build-debug-clang" PASS_PARENT_ENVS_2="true" PROJECT_NAME="LLVM" TARGET_NAME="llvm-tblgen" CONFIG_NAME="Debug-clang" RUN_TARGET_PROJECT_NAME="LLVM" RUN_TARGET_NAME="llvm-tblgen">
+    <method v="2">
+      <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
+    </method>
+  </configuration>
+</component>

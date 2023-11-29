@@ -42,7 +42,7 @@ public:
     Int16Type = SignedInt;
     Char32Type = UnsignedLong;
     SigAtomicType = SignedChar;
-    resetDataLayout("e-S16-p:16:16-i8:8-i16:8-m:e-n16");
+    resetDataLayout("e-S16-p:16:16-i8:8-i16:16-m:e-n16");
   }
 
   ArrayRef<Builtin::Info> getTargetBuiltins() const override {

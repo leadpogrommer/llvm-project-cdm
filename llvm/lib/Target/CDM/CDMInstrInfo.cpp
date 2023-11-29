@@ -4,11 +4,58 @@
 
 #include "CDMInstrInfo.h"
 
+
+#include "llvm/ADT/STLExtras.h"
+#include "llvm/CodeGen/MachineInstrBuilder.h"
+#include "llvm/Support/ErrorHandling.h"
+#include "llvm/CodeGen/MachineFrameInfo.h"
+//#include "llvm/Support/TargetRegistry.h"
+
 #define GET_INSTRINFO_CTOR_DTOR
 #include "CDMGenInstrInfo.inc"
 
 namespace llvm {
 CDMInstrInfo::CDMInstrInfo()  {
 
+}
+
+
+// needed for loading/saving regs in prologue/epilogue
+void CDMInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
+                                       Register SrcReg, bool isKill, int FI,
+                                       const TargetRegisterClass *RC, const TargetRegisterInfo *TRI,
+                                       Register VReg) const {
+  DebugLoc DL;
+  MachineMemOperand *MMO = GetMemOperand(MBB, FI, MachineMemOperand::MOStore);
+
+
+  // TODO: understand this
+  BuildMI(MBB, I, DL, get(CDM::ssw)).addReg(SrcReg, getKillRegState(isKill))
+  .addFrameIndex(FI).addMemOperand(MMO);
+}
+
+// TODO: understand this
+MachineMemOperand *CDMInstrInfo::GetMemOperand(MachineBasicBlock &MBB, int FI,
+                            MachineMemOperand::Flags Flags) const {
+  MachineFunction &MF = *MBB.getParent();
+  MachineFrameInfo &MFI = MF.getFrameInfo();
+  // Offset?
+  return MF.getMachineMemOperand(MachinePointerInfo::getFixedStack(MF, FI),
+                                 Flags, MFI.getObjectSize(FI),
+                                 MFI.getObjectAlign(FI));
+}
+void CDMInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
+                                        MachineBasicBlock::iterator MI,
+                                        Register DestReg, int FrameIndex,
+                                        const TargetRegisterClass *RC,
+                                        const TargetRegisterInfo *TRI,
+                                        Register VReg) const {
+  DebugLoc DL;
+  if (MI != MBB.end()) DL = MI->getDebugLoc();
+  MachineMemOperand *MMO = GetMemOperand(MBB, FrameIndex, MachineMemOperand::MOLoad);
+
+
+  // OFFSET?
+  BuildMI(MBB, MI, DL, get(CDM::lsw), DestReg).addFrameIndex(FrameIndex).addMemOperand(MMO);
 }
 } // namespace llvm

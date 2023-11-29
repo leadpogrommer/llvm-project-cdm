@@ -9,6 +9,7 @@
 #include "mlir/Tools/lsp-server-support/SourceMgrUtils.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/Support/Path.h"
+#include <mlir/Tools/lsp-server-support/Logging.h>
 #include <optional>
 
 using namespace mlir;
@@ -132,6 +133,10 @@ Hover SourceMgrInclude::buildHover() const {
 
 void lsp::gatherIncludeFiles(llvm::SourceMgr &sourceMgr,
                              SmallVectorImpl<SourceMgrInclude> &includes) {
+  Logger::info("Begin searIncludeFiles");
+  for(unsigned int i = 1; i <= sourceMgr.getNumBuffers(); i++){
+    Logger::info("Buffer {0} path {1} is_main {2}", i, sourceMgr.getMemoryBuffer(i)->getBufferIdentifier(), i == sourceMgr.getMainFileID());
+  }
   for (unsigned i = 1, e = sourceMgr.getNumBuffers(); i < e; ++i) {
     // Check to see if this file was included by the main file.
     SMLoc includeLoc = sourceMgr.getBufferInfo(i + 1).IncludeLoc;
@@ -143,10 +148,22 @@ void lsp::gatherIncludeFiles(llvm::SourceMgr &sourceMgr,
     auto *buffer = sourceMgr.getMemoryBuffer(i + 1);
     llvm::SmallString<256> path(buffer->getBufferIdentifier());
     llvm::sys::path::remove_dots(path, /*remove_dot_dot=*/true);
+    if(!llvm::sys::path::is_absolute(path)){
+      auto includerPath = sourceMgr.getMemoryBuffer(sourceMgr.FindBufferContainingLoc(includeLoc))->getBufferIdentifier();
+      auto includerDir = llvm::sys::path::parent_path(includerPath);
+
+      std::string absPath = (includerDir + "/" + path).str();
+      path.assign(absPath);
+    }
 
     llvm::Expected<URIForFile> includedFileURI = URIForFile::fromFile(path);
-    if (!includedFileURI)
+    if (!includedFileURI){
+      // Without this expected is unchecked and server crashes
+      handleAllErrors(includedFileURI.takeError(), [&](const llvm::ErrorInfoBase &EI) {
+
+      });
       continue;
+    }
 
     // Find the end of the include token.
     const char *includeStart = includeLoc.getPointer() - 2;
