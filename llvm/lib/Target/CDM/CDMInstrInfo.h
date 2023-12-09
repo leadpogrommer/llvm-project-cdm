@@ -31,12 +31,16 @@ public:
                             const TargetRegisterInfo *TRI,
                             Register VReg) const override;
 
-private:
+  bool expandPostRAPseudo(MachineInstr &MI) const override;
+
+      private:
   const CDMRegisterInfo RI;
 
 
   MachineMemOperand *GetMemOperand(MachineBasicBlock &MBB, int FI,
                                MachineMemOperand::Flags Flags) const;
+  void expandRet(MachineBasicBlock &MBB,
+                 MachineBasicBlock::iterator I) const;
 };
 
 } // namespace llvm

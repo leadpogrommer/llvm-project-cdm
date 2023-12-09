@@ -77,6 +77,7 @@ add_llvm_target(CDMCodeGen
         CDMFunctionInfo.cpp
         CDMRegisterInfo.cpp
         CDMInstrInfo.cpp
+        CDMMCInstLower.cpp
 
         LINK_COMPONENTS
         AsmPrinter

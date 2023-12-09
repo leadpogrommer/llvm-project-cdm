@@ -17,15 +17,15 @@ public:
     // TODO: check whether it is true
     PointerAlign = 8;
     IntWidth = 16;
-    IntAlign = 8;
+    IntAlign = 16;
     LongWidth = 32;
-    LongAlign = 8;
+    LongAlign = 32;
     LongLongWidth = 32;
-    LongLongAlign = 8;
+    LongLongAlign = 32;
     SuitableAlign = 8;
     DefaultAlignForAttributeAligned = 8;
     HalfWidth = 16;
-    HalfAlign = 8;
+    HalfAlign = 16;
     FloatWidth = 32;
     FloatAlign = 8;
     DoubleWidth = 32;

@@ -2,7 +2,7 @@
 <project version="4">
   <component name="CMakeSharedSettings">
     <configurations>
-      <configuration PROFILE_NAME="Debug-clang" ENABLED="true" CONFIG_NAME="Debug" TOOLCHAIN_NAME="clang" GENERATION_OPTIONS="-DCMAKE_INSTALL_PREFIX=/home/ilya/work/cdm_clang/install_prefix -DLLVM_ENABLE_PROJECTS=clang;mlir -DLLVM_TARGETS_TO_BUILD=Sparc;AVR -DLLVM_PARALLEL_LINK_JOBS=6 -DLLVM_USE_LINKER=lld -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=CDM" BUILD_OPTIONS="-j 17" />
+      <configuration PROFILE_NAME="Debug-clang" ENABLED="true" CONFIG_NAME="Debug" TOOLCHAIN_NAME="clang" GENERATION_OPTIONS="-G Ninja -DCMAKE_INSTALL_PREFIX=/home/ilya/work/cdm_clang/install_prefix -DLLVM_ENABLE_PROJECTS=clang;mlir -DLLVM_TARGETS_TO_BUILD=Sparc;AVR -DLLVM_PARALLEL_LINK_JOBS=6 -DLLVM_USE_LINKER=lld -DLLVM_EXPERIMENTAL_TARGETS_TO_BUILD=CDM" BUILD_OPTIONS="-j 17" />
     </configurations>
   </component>
 </project>
