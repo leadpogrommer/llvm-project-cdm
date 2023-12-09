@@ -2,6 +2,8 @@
 // Created by ilya on 21.11.23.
 //
 
+#define DEBUG_TYPE "cdm-reg-info"
+
 #include "CDMRegisterInfo.h"
 
 #include "CDMFunctionInfo.h"
@@ -39,13 +41,36 @@ const MCPhysReg *
 CDMRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
   return CSR_O16_SaveList;
 }
-bool CDMRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator MI,
+bool CDMRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
                                           int SPAdj, unsigned int FIOperandNum,
                                           RegScavenger *RS) const {
-  // TODO: implement this
-  llvm_unreachable("Unimplemented");
-  errs() << "";
-  return false;
+  MachineInstr &MI = *II;
+  MachineFunction &MF = *MI.getParent()->getParent();
+  MachineFrameInfo &MFI = MF.getFrameInfo();
+  CDMFunctionInfo *Cpu0FI = MF.getInfo<CDMFunctionInfo>();
+
+  unsigned i = 0;
+  while (!MI.getOperand(i).isFI()) {
+    ++i;
+    assert(i < MI.getNumOperands() &&
+           "Instr doesn't have FrameIndex operand!");
+  }
+
+  LLVM_DEBUG(errs() << "\nFunction : " << MF.getFunction().getName() << "\n";
+             errs() << "<--------->\n" << MI);
+
+  int FrameIndex = MI.getOperand(i).getIndex();
+  uint64_t stackSize = MF.getFrameInfo().getStackSize();
+  int64_t spOffset = MF.getFrameInfo().getObjectOffset(FrameIndex);
+
+  LLVM_DEBUG(errs() << "FrameIndex : " << FrameIndex << "\n"
+                    << "spOffset   : " << spOffset << "\n"
+                    << "stackSize  : " << stackSize << "\n");
+  // TODO: acknowledge saved regs and other stuff
+  // TODO: handle incoming arguments
+  MI.getOperand(i).ChangeToImmediate(spOffset);
+//  llvm_unreachable("Unimplemented");
+  return false; // instruction not removed
 }
 Register CDMRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
   return CDM::FP;

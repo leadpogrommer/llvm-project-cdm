@@ -17,18 +17,34 @@ using namespace llvm;
 #define PRINT_ALIAS_INSTR
 #include "CDMGenAsmWriter.inc"
 
-void CDMInstPrinter::printOperand(const MCInst *MI, unsigned int OpNo,
-                                  raw_ostream &O) {
-  // TODO: implement this
-  O << "TODO: implement this";
-}
 void CDMInstPrinter::printInst(const MCInst *MI, uint64_t Address,
                                StringRef Annot, const MCSubtargetInfo &STI,
                                raw_ostream &O) {
-  // TODO: implement this
-  O << "TODO: implement this";
+  // TODO: printAliasInst()?
+  printInstruction(MI, Address, O);
+  printAnnotation(O, Annot);
 }
+
+void CDMInstPrinter::printOperand(const MCInst *MI, unsigned int OpNo,
+                                  raw_ostream &O) {
+  const MCOperand &Op = MI->getOperand(OpNo);
+  if (Op.isReg()) {
+    printRegName(O, Op.getReg());
+    return;
+  }
+
+  if (Op.isImm()) {
+    O << Op.getImm();
+    return;
+  }
+
+  llvm_unreachable("Unknown operand type");
+}
+
 void CDMInstPrinter::printMemOperand(const MCInst *MI, unsigned int OpNo,
                                      raw_ostream &O) {
-  O << "TODO: mem operand";
+  printOperand(MI, OpNo, O);
+}
+void CDMInstPrinter::printRegName(raw_ostream &OS, MCRegister Reg) const {
+  OS << StringRef(const_cast<CDMInstPrinter*>(this)->getRegisterName(Reg));
 }

@@ -58,4 +58,22 @@ void CDMInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
   // OFFSET?
   BuildMI(MBB, MI, DL, get(CDM::lsw), DestReg).addFrameIndex(FrameIndex).addMemOperand(MMO);
 }
+bool CDMInstrInfo::expandPostRAPseudo(MachineInstr &MI) const {
+  MachineBasicBlock &MBB = *MI.getParent();
+
+  switch (MI.getDesc().getOpcode()) {
+  default:
+    return false;
+  case CDM::PseudoRet:
+    expandRet(MBB, MI);
+  }
+
+  MBB.erase(MI);
+  return true;
+
+}
+void CDMInstrInfo::expandRet(MachineBasicBlock &MBB,
+                             MachineBasicBlock::iterator I) const {
+  BuildMI(MBB, I, I->getDebugLoc(), get(CDM::rts));
+}
 } // namespace llvm

@@ -103,7 +103,7 @@ def ldi: LoadImm<simm16>;
 
 
 let isReturn=1, isTerminator=1, isBarrier=1, hasCtrlDep=1 in
-  def Ret : CDMPseudo<(outs), (ins), "", [(CDMRet)]>;
+  def PseudoRet : CDMPseudo<(outs), (ins), "", [(CDMRet)]>;
 
 
 def ADD: arithLogicR<"add", add, 1>;
@@ -115,3 +115,17 @@ def ADD: arithLogicR<"add", add, 1>;
 */
 
 def my_cool_pat_for_ldi: Pat<(i16 imm:$imm),(ldi imm:$imm)>;
+
+
+class RetBase: CDMInst<(outs), (ins), "rts", []> {
+    // TODO: check this flags
+    let isReturn = 1;
+    let isCodeGenOnly = 1;
+    let hasCtrlDep = 1;
+    let hasExtraSrcRegAllocReq = 1;
+    let isBranch=1;
+    let isTerminator=1;
+    let isBarrier=1;
+}
+
+def rts: RetBase;
