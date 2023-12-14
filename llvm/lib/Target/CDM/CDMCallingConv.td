@@ -4,4 +4,4 @@ def RetCC_CDM : CallingConv<[
 ]>;
 
 def CSR_O16 : CalleeSavedRegs<(add FP,
-                                   (sequence "R%u", 1, 6))>;
+                                   (sequence "R%u", 4, 6))>;

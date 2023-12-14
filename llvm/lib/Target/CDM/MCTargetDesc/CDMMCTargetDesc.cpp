@@ -26,6 +26,7 @@
 #include "CDMGenSubtargetInfo.inc"
 
 #define GET_REGINFO_MC_DESC
+#include "CDMAsmPrinter.h"
 #include "CDMGenRegisterInfo.inc"
 
 namespace llvm{Target &getTheCDMTarget();}
@@ -73,6 +74,13 @@ static MCInstPrinter *createCDMMCInstPrinter(const Triple &T,
   return new CDMInstPrinter(MAI, MII, MRI);
 }
 
+static MCTargetStreamer *createCDMTargetAsmStreamer(MCStreamer &S,
+                                                    formatted_raw_ostream &OS,
+                                                    MCInstPrinter *InstPrint,
+                                                    bool isVerboseAsm){
+  return new CDMAsmTargetStreamer(S);
+}
+
 extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeCDMTargetMC() {
   RegisterMCAsmInfoFn X(getTheCDMTarget(), createCDMMCAsmInfo);
 
@@ -80,4 +88,5 @@ extern "C" LLVM_EXTERNAL_VISIBILITY void LLVMInitializeCDMTargetMC() {
   TargetRegistry::RegisterMCRegInfo(getTheCDMTarget(), createCDMMCRegisterInfo);
   TargetRegistry::RegisterMCSubtargetInfo(getTheCDMTarget(), createCDMMCSubtargetInfo);
   TargetRegistry::RegisterMCInstPrinter(getTheCDMTarget(),createCDMMCInstPrinter);
+  TargetRegistry::RegisterAsmTargetStreamer(getTheCDMTarget(), createCDMTargetAsmStreamer);
 }

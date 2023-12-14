@@ -38,6 +38,12 @@ class arithLogicR<string asm_instr, SDNode OpNode, bit isComm = 0>:
             let isReMaterializable = 1;
           }
 
+def shamt       : Operand<i16>;
+def immZext3: ImmLeaf<i16, [{return (Imm > 0) && (Imm <= 8);}]>;
+def SHL: CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs, shamt:$shamt),
+        "shl\t$rs, $rd, $shamt",
+        [(set CPURegs:$rd, (shl CPURegs:$rs, immZext3:$shamt))]
+>;
 
 // load
 class AlignedLoad<PatFrag Node> :

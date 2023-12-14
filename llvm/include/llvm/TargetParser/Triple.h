@@ -842,6 +842,10 @@ public:
     return getArch() == Triple::arm || getArch() == Triple::armeb;
   }
 
+  bool isCDM() const {
+    return getArch() == Triple::cdm;
+  }
+
   /// Tests whether the target supports the EHABI exception
   /// handling standard.
   bool isTargetEHABICompatible() const {

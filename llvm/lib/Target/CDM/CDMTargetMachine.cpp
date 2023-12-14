@@ -34,6 +34,7 @@ CDMTargetMachine::CDMTargetMachine(const Target &T, const Triple &TT,
       TLOF(std::make_unique<CDMTargetObjectFile>()), dataLayout(computeDataLayout()), DefaultSubtarget(TT, CPU, FS, *this)
 {
   initAsmInfo();
+//  Options.EmitAddrsig = false;
 }
 CDMTargetMachine::~CDMTargetMachine() = default;
 
