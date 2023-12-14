@@ -3,14 +3,13 @@
 //
 
 #include "CDMAsmPrinter.h"
-#include "llvm/MC/TargetRegistry.h"
 #include "TargetInfo/CDMTargetInfo.h"
 #include "llvm/ADT/SmallString.h"
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/ADT/Twine.h"
 #include "llvm/CodeGen/MachineConstantPool.h"
-#include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/MachineFrameInfo.h"
+#include "llvm/CodeGen/MachineFunctionPass.h"
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineMemOperand.h"
 #include "llvm/IR/BasicBlock.h"
@@ -20,6 +19,9 @@
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCStreamer.h"
 #include "llvm/MC/MCSymbol.h"
+#include "llvm/MC/TargetRegistry.h"
+#include "llvm/Support/Format.h"
+#include "llvm/Support/FormatVariadic.h"
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetLoweringObjectFile.h"
 #include "llvm/Target/TargetOptions.h"
@@ -56,8 +58,9 @@ void CDMAsmPrinter::emitFunctionBodyEnd() {
   // TODO
 }
 void CDMAsmPrinter::emitFunctionEntryLabel() {
-  OutStreamer->emitLabel(CurrentFnSym);
-//  CurrentFnSym->print(this., this->MF->getContext().getAsmInfo());
+//  OutStreamer->emitLabel(CurrentFnSym);
+  // TODO: differentiate between exported and not exported symbols
+  OutStreamer->emitRawText(llvm::formatv("{0}>", CurrentFnSym->getName()));
 }
 void CDMAsmPrinter::emitLinkage(const GlobalValue *GV, MCSymbol *GVSym) const {
   // not needed (stub)
@@ -85,9 +88,24 @@ void CDMAsmPrinter::emitFunctionHeader() {
 }
 void CDMAsmPrinter::emitStartOfAsmFile(Module &module) {
 //  AsmPrinter::emitStartOfAsmFile(module);
+  // TODO: generate name of section
+    OutStreamer -> emitRawText("rsect TODO_generate_this_name\n\n");
+}
+void CDMAsmPrinter::emitEndOfAsmFile(Module &module) {
+  OutStreamer-> emitRawText("end.");
 }
 //void CDMAsmPrinter::emitStartOfAsmFile(Module &module) {
 ////  AsmPrinter::emitStartOfAsmFile(module);
 //}
 
 // TODO: implement target streamer
+CDMAsmTargetStreamer::CDMAsmTargetStreamer(MCStreamer &S): MCTargetStreamer(S) {}
+void CDMAsmTargetStreamer::emitLabel(MCSymbol *Symbol) {
+
+}
+void CDMAsmTargetStreamer::changeSection(const MCSection *CurSection,
+                                         MCSection *Section,
+                                         const MCExpr *SubSection,
+                                         raw_ostream &OS) {
+  // This is a stub. We don't have sections in cdm
+}

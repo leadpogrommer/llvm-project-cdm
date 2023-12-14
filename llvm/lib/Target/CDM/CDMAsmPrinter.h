@@ -33,6 +33,16 @@ public:
   //  void emitStartOfAsmFile(Module &module) override;
   void emitFunctionHeader() override;
   void emitStartOfAsmFile(Module &module) override;
+  void emitEndOfAsmFile(Module &module) override;
+};
+
+class CDMAsmTargetStreamer: public MCTargetStreamer {
+
+public:
+  explicit CDMAsmTargetStreamer(MCStreamer &S);
+  void changeSection(const MCSection *CurSection, MCSection *Section,
+                     const MCExpr *SubSection, raw_ostream &OS) override;
+  void emitLabel(MCSymbol *Symbol) override;
 };
 
 } // namespace llvm
