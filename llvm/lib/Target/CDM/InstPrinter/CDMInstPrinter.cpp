@@ -3,6 +3,7 @@
 //
 
 #include "CDMInstPrinter.h"
+#include <map>
 
 #include "llvm/ADT/StringExtras.h"
 #include "llvm/MC/MCExpr.h"
@@ -16,6 +17,7 @@
 using namespace llvm;
 #define PRINT_ALIAS_INSTR
 #include "CDMGenAsmWriter.inc"
+#include "CDMInstrInfo.h"
 
 void CDMInstPrinter::printInst(const MCInst *MI, uint64_t Address,
                                StringRef Annot, const MCSubtargetInfo &STI,
@@ -37,6 +39,14 @@ void CDMInstPrinter::printOperand(const MCInst *MI, unsigned int OpNo,
     O << Op.getImm();
     return;
   }
+  if(Op.isExpr()) {
+        Op.getExpr()
+            ->print(O, &MAI, false);
+//    O << Op.getExpr()->dump();
+    return;
+  }
+
+
 
   llvm_unreachable("Unknown operand type");
 }
@@ -47,4 +57,21 @@ void CDMInstPrinter::printMemOperand(const MCInst *MI, unsigned int OpNo,
 }
 void CDMInstPrinter::printRegName(raw_ostream &OS, MCRegister Reg) const {
   OS << StringRef(const_cast<CDMInstPrinter*>(this)->getRegisterName(Reg));
+}
+void CDMInstPrinter::printCondCode(const MCInst *MI, unsigned int OpNo,
+                                   raw_ostream &O) {
+  using namespace llvm;
+  std::map<CDMCOND::CondOp, std::string> CondMap = {
+      {CDMCOND::LT, "lt"},
+      {CDMCOND::LE, "le"},
+      {CDMCOND::GT, "gt"},
+      {CDMCOND::GE, "ge"},
+      {CDMCOND::LO, "lo"},
+      {CDMCOND::LS, "ls"},
+      {CDMCOND::HI, "hi"},
+      {CDMCOND::HS, "hs"},
+      {CDMCOND::EQ, "eq"},
+      {CDMCOND::NE, "ne"},
+  };
+  O << CondMap.at((CDMCOND::CondOp)MI->getOperand(OpNo).getImm());
 }

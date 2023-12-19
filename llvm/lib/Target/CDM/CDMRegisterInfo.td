@@ -56,6 +56,8 @@ def CPURegs : RegisterClass<"CDM", [i16], 8, (add
 //@Status Registers class
 def SPECIAL     : RegisterClass<"CDM", [i16], 8, (add PC, PSR, SP)>;
 
+def SR : RegisterClass<"CDM", [i16], 16, (add PSR)>;
+
 //@Co-processor 0 Registers class
 // def C0Regs : RegisterClass<"CDM", [i32], 32, (add PC, EPC)>;
 

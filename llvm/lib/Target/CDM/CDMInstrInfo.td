@@ -21,6 +21,7 @@ class CDMInst<dag outs, dag ins, string asmstr, list<dag> pattern>: Instruction
 
   let AsmString   = asmstr;
   let Pattern     = pattern;
+  let hasDelaySlot = 0;
   // TODO: right now we don't need opcodes and stuff
 }
 
@@ -135,3 +136,37 @@ class RetBase: CDMInst<(outs), (ins), "rts", []> {
 }
 
 def rts: RetBase;
+
+def brtarget: Operand<OtherVT> {
+  let OperandType = "OPERAND_MEMORY";
+}
+
+def BR: CDMInst<(outs), (ins brtarget:$addr), "br\t$addr", [(br bb:$addr)]>{
+  let isBranch = 1;
+  let isTerminator = 1;
+  let isBarrier = 1;
+}
+
+// class CondBR<string instr_asm>: CDMInst<(outs), (ins SR:$psr, brtarget:$addr),
+//                                         !strconcat(instr_asm, "\t$addr"), []>{
+//                                           let isBranch = 1;
+//                                           let isTerminator = 1;
+//                                         }
+
+def cond_val: Operand<OtherVT> {
+  let PrintMethod = "printCondCode";
+}
+
+def BCond: CDMInst<(outs), (ins cond_val:$cond, brtarget:$addr), "b$cond\t$addr", []>{
+  let isTerminator = 1;
+  let isBranch = 1;
+  let Uses = [PSR]; 
+}
+
+def CMP: CDMInst<(outs), (ins CPURegs:$ra, CPURegs:$rb),
+                "cmp\t$ra, $rb", []>{
+                  let Defs = [PSR];
+                }
+                
+// def : Pat<(brcond (i16 (setlt CPURegs:$ra, CPURegs:$rb)), bb:$dst),
+//           (BLT (CMP CPURegs:$ra, CPURegs:$rb), bb:$dst)>;

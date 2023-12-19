@@ -30,6 +30,7 @@ private:
   void Select(SDNode *N) override;
   bool trySelect(SDNode *Node);
   bool SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset);
+  bool SelectConditionalBranch(SDNode *N);
 };
 
 FunctionPass *createCDMISelDag(CDMTargetMachine &TM, CodeGenOpt::Level OptLevel);

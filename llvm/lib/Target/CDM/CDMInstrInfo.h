@@ -14,6 +14,27 @@
 
 namespace llvm {
 
+namespace CDMCOND{
+enum CondOp {
+  // signed
+  LT, // <
+  LE, // <=
+  GT, // >
+  GE, // >=
+
+  // unsigned
+  LO, // <
+  LS, // <=
+  HI, // >
+  HS, // >=
+
+  // other
+  EQ, // ==
+  NE, // !=
+
+};
+} // namespace CDMCOND
+
 class CDMInstrInfo: public CDMGenInstrInfo {
 public:
   explicit CDMInstrInfo();

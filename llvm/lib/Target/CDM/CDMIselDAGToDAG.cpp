@@ -30,6 +30,11 @@ void CDMDagToDagIsel::Select(SDNode *N) {
     return;
   }
 
+  if(N->getOpcode() == ISD::BR_CC){
+    SelectConditionalBranch(N);
+    return;
+  }
+
   SelectCode(N);
 
 }
@@ -54,6 +59,53 @@ bool CDMDagToDagIsel::SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base,
   LLVM_DEBUG(errs() << "Cant select address");
   return false;
 
+}
+
+
+// This is manual solution
+// Until I figure out how to use tablegen for this
+// TODO: !important! use tablegen for branches
+bool CDMDagToDagIsel::SelectConditionalBranch(SDNode *N) {
+  SDValue Chain = N->getOperand(0);
+  SDValue Cond = N->getOperand(1);
+  SDValue LHS = N->getOperand(2);
+  SDValue RHS = N->getOperand(3);
+  SDValue Target = N->getOperand(4);
+
+  CondCodeSDNode *CC = cast<CondCodeSDNode>(Cond.getNode());
+
+  std::map<ISD::CondCode, CDMCOND::CondOp> CondMap = {
+    {ISD::CondCode::SETLT, CDMCOND::LT},
+      {ISD::CondCode::SETLE, CDMCOND::LE},
+      {ISD::CondCode::SETGT, CDMCOND::GT},
+      {ISD::CondCode::SETGE, CDMCOND::GE},
+      {ISD::CondCode::SETULT, CDMCOND::LO},
+      {ISD::CondCode::SETULE, CDMCOND::LS},
+      {ISD::CondCode::SETUGT, CDMCOND::HI},
+      {ISD::CondCode::SETUGE, CDMCOND::HS},
+      {ISD::CondCode::SETEQ, CDMCOND::EQ},
+      {ISD::CondCode::SETNE, CDMCOND::NE},
+  };
+
+  if(!CondMap.count(CC->get())){
+    LLVM_DEBUG(errs() << "Unknown branch condition");
+    return false;
+  }
+
+  EVT CompareTys[] = { MVT::Other, MVT::Glue };
+  SDVTList CompareVT = CurDAG->getVTList(CompareTys);
+  SDValue CompareOps[] = {LHS, RHS, Chain};
+  // TODO: long compare???
+  SDNode *Compare = CurDAG->getMachineNode(CDM::CMP, N, CompareVT, CompareOps);
+
+
+  SDValue CCVal = CurDAG->getTargetConstant(CondMap[CC->get()], N, MVT::i32);
+  SDValue BranchOps[] = {CCVal, Target, SDValue(Compare, 0),
+                         SDValue(Compare, 1)};
+
+  CurDAG->SelectNodeTo(N, CDM::BCond, MVT::Other, BranchOps);
+
+  return true;
 }
 
 FunctionPass *llvm::createCDMISelDag(llvm::CDMTargetMachine &TM, CodeGenOpt::Level OptLevel) {

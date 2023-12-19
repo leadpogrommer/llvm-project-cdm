@@ -10,7 +10,7 @@ test:                                   # -- Begin function test
     push fp # sp -> saved fp
     ldsp fp # fp -> saved fp
 
-    addsp 10 # 2x local 16 bit variables
+    addsp -10 # 2x local 16 bit variables
 
 	ssw	r1, -2                          # 2-byte Folded Spill
     ldi	r0, 5
@@ -32,7 +32,7 @@ test:                                   # -- Begin function test
 
 
 	# ignore alloca
-	addsp -10 # sp -> saved fp
+	addsp 10 # sp -> saved fp
 	pop fp
 
 	rts
