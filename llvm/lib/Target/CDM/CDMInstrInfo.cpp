@@ -15,7 +15,7 @@
 #include "CDMGenInstrInfo.inc"
 
 namespace llvm {
-CDMInstrInfo::CDMInstrInfo()  {
+CDMInstrInfo::CDMInstrInfo(): CDMGenInstrInfo(CDM::ADJCALLSTACKDOWN, CDM::ADJCALLSTACKUP)  {
 
 }
 
@@ -75,5 +75,16 @@ bool CDMInstrInfo::expandPostRAPseudo(MachineInstr &MI) const {
 void CDMInstrInfo::expandRet(MachineBasicBlock &MBB,
                              MachineBasicBlock::iterator I) const {
   BuildMI(MBB, I, I->getDebugLoc(), get(CDM::rts));
+}
+void CDMInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
+                               MachineBasicBlock::iterator MI,
+                               const DebugLoc &DL, MCRegister DestReg,
+                               MCRegister SrcReg, bool KillSrc) const {
+//  TargetInstrInfo::copyPhysReg(MBB, MI, DL, DestReg, SrcReg, KillSrc);
+  assert(CDM::CPURegsRegClass.contains(SrcReg) && CDM::CPURegsRegClass.contains(DestReg) && "Can only copy General purpose regs");
+  // TODO: check order
+  MachineInstrBuilder MIB = BuildMI(MBB, MI, DL, get(CDM::MOVE));
+  MIB.addReg(DestReg);
+  MIB.addReg(SrcReg, getKillRegState(KillSrc));
 }
 } // namespace llvm

@@ -1,3 +1,9 @@
+def CC_CDM : CallingConv<[
+  CCIfType<[i8], CCPromoteToType<i16>>,
+  CCIfType<[i16], CCAssignToReg<[R0, R1, R2, R3]>>,
+  CCIfType<[i16], CCAssignToStack<2, 2>>,
+]>;
+
 def RetCC_CDM : CallingConv<[
   // i16 are returned in register(s)
   CCIfType<[i16], CCAssignToReg<[R0, R1, R2, R3]>>

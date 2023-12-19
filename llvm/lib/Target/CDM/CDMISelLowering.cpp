@@ -25,22 +25,42 @@ CDMISelLowering::CDMISelLowering(const CDMTargetMachine &TM,
 #include "CDMFunctionInfo.h"
 #include "CDMGenCallingConv.inc"
 
+
+// Mostly taken from llvm-leg
 SDValue CDMISelLowering::LowerFormalArguments(SDValue Chain, CallingConv::ID CallConv, bool IsVarArg,
                                               const SmallVectorImpl<ISD::InputArg> &Ins,
                                               const SDLoc &DL, SelectionDAG &DAG,
                                               SmallVectorImpl<SDValue> &InVals) const {
   auto &MF = DAG.getMachineFunction();
   auto &MFI = MF.getFrameInfo();
-//  MF.dump();
-//  CDMFunctionInfo *CDMFI = MF.getInfo<CDMFunctionInfo>();
-//
-//  SmallVector<CCValAssign, 16> ArgLocs;
+  auto &RegInfo = MF.getRegInfo();
+
+  assert(!IsVarArg && "VarArg is not supported");
+
+  // Assign locations to all of the incoming arguments.
+  SmallVector<CCValAssign, 16> ArgLocs;
+  CCState CCInfo(CallConv, IsVarArg, DAG.getMachineFunction(), ArgLocs,
+                 *DAG.getContext());
+
+  CCInfo.AnalyzeFormalArguments(Ins, CC_CDM);
 
 
+  for(auto &VA: ArgLocs){
+    if(VA.isRegLoc()){
+      EVT RegVT = VA.getLocVT();
+      assert(RegVT.getSimpleVT().SimpleTy == MVT::i16 && "Only support 16-bit register passing");
+      const unsigned VReg = RegInfo.createVirtualRegister(&CDM::CPURegsRegClass);
+      RegInfo.addLiveIn(VA.getLocReg(), VReg);
+      SDValue ArgIn = DAG.getCopyFromReg(Chain, DL, VReg, RegVT);
+      InVals.push_back(ArgIn);
 
-  // TODO: this is as stub (ch 3.5)
-//  return TargetLowering::LowerFormalArguments(value, id, b, vector, loc, dag,
-//                                              smallVector);
+      continue;
+    }
+
+    llvm_unreachable("Arguments on stack are not supported yet");
+  }
+
+
   return Chain;
 }
 SDValue
@@ -134,6 +154,148 @@ bool CDMISelLowering::CanLowerReturn(CallingConv::ID CallingConv, MachineFunctio
 const char *CDMISelLowering::getTargetNodeName(unsigned int Opcode) const {
   switch (Opcode) {
     NODE_NAME(Ret);
+    NODE_NAME(Call);
     default: return NULL;
   }
+}
+
+
+// Mostly taken from llvm-leg
+// TODO: use code from cpu0, not leg
+SDValue CDMISelLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
+                                   SmallVectorImpl<SDValue> &InVals) const {
+  SelectionDAG &DAG = CLI.DAG;
+  SDLoc &Loc = CLI.DL;
+  SmallVectorImpl<ISD::OutputArg> &Outs = CLI.Outs;
+  SmallVectorImpl<SDValue> &OutVals = CLI.OutVals;
+  SmallVectorImpl<ISD::InputArg> &Ins = CLI.Ins;
+  SDValue Chain = CLI.Chain;
+  SDValue Callee = CLI.Callee;
+  CallingConv::ID CallConv = CLI.CallConv;
+  const bool IsVarArg = CLI.IsVarArg;
+  MachineFunction &MF = DAG.getMachineFunction();
+  MachineFrameInfo &MFI = MF.getFrameInfo();
+  const TargetFrameLowering *TFL = MF.getSubtarget().getFrameLowering();
+
+  CLI.IsTailCall = false;
+
+  if (IsVarArg) {
+    llvm_unreachable("VarArg unimplemented");
+  }
+
+  // Analyze operands of the call, assigning locations to each operand.
+  SmallVector<CCValAssign, 16> ArgLocs;
+  CCState CCInfo(CallConv, IsVarArg, DAG.getMachineFunction(), ArgLocs,
+                 *DAG.getContext());
+  CCInfo.AnalyzeCallOperands(Outs, CC_CDM);
+
+  // Get the size of the outgoing arguments stack space requirement.
+  unsigned NextStackOffset = CCInfo.getNextStackOffset();
+  unsigned StackAlignment = TFL->getStackAlignment();
+  NextStackOffset = alignTo(NextStackOffset, StackAlignment);
+  SDValue NextStackOffsetVal = DAG.getIntPtrConstant(NextStackOffset, Loc, true);
+
+  Chain = DAG.getCALLSEQ_START(Chain, NextStackOffset, 0, Loc);
+
+  SmallVector<std::pair<unsigned, SDValue>, 8> RegsToPass;
+  SmallVector<SDValue, 8> MemOpChains;
+
+  // Walk the register/memloc assignments, inserting copies/loads.
+  for (unsigned i = 0, e = ArgLocs.size(); i != e; ++i) {
+    CCValAssign &VA = ArgLocs[i];
+    SDValue Arg = OutVals[i];
+
+    // We only handle fully promoted arguments.
+    assert(VA.getLocInfo() == CCValAssign::Full && "Unhandled loc info");
+
+    if (VA.isRegLoc()) {
+      RegsToPass.push_back(std::make_pair(VA.getLocReg(), Arg));
+      continue;
+    }
+    llvm_unreachable("Stack operands are not supported yet");
+
+  }
+
+  // Emit all stores, make sure they occur before the call.
+  if (!MemOpChains.empty()) {
+    Chain = DAG.getNode(ISD::TokenFactor, Loc, MVT::Other, MemOpChains);
+  }
+
+  // Build a sequence of copy-to-reg nodes chained together with token chain
+  // and flag operands which copy the outgoing args into the appropriate regs.
+  SDValue InFlag;
+  for (auto &Reg : RegsToPass) {
+    Chain = DAG.getCopyToReg(Chain, Loc, Reg.first, Reg.second, InFlag);
+    InFlag = Chain.getValue(1);
+  }
+
+  // We only support calling global addresses.
+  GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee);
+  assert(G && "We only support the calling of global addresses");
+
+  EVT PtrVT = getPointerTy(DAG.getDataLayout());
+  Callee = DAG.getTargetGlobalAddress(G->getGlobal(), Loc, PtrVT, 0);
+
+  std::vector<SDValue> Ops;
+  Ops.push_back(Chain);
+  Ops.push_back(Callee);
+
+  // Add argument registers to the end of the list so that they are known live
+  // into the call.
+  for (auto &Reg : RegsToPass) {
+    Ops.push_back(DAG.getRegister(Reg.first, Reg.second.getValueType()));
+  }
+
+  // Add a register mask operand representing the call-preserved registers.
+  const uint32_t *Mask;
+  const TargetRegisterInfo *TRI = DAG.getSubtarget().getRegisterInfo();
+  Mask = TRI->getCallPreservedMask(DAG.getMachineFunction(), CallConv);
+
+  assert(Mask && "Missing call preserved mask for calling convention");
+  Ops.push_back(DAG.getRegisterMask(Mask));
+
+  if (InFlag.getNode()) {
+    Ops.push_back(InFlag);
+  }
+
+  SDVTList NodeTys = DAG.getVTList(MVT::Other, MVT::Glue);
+
+  // Returns a chain and a flag for retval copy to use.
+  Chain = DAG.getNode(CDMISD::Call, Loc, NodeTys, Ops);
+  InFlag = Chain.getValue(1);
+
+  Chain = DAG.getCALLSEQ_END(Chain, DAG.getIntPtrConstant(NextStackOffset, Loc, true),
+                             DAG.getIntPtrConstant(0, Loc, true), InFlag, Loc);
+  if (!Ins.empty()) {
+    InFlag = Chain.getValue(1);
+  }
+
+  // Handle result values, copying them out of physregs into vregs that we
+  // return.
+  return LowerCallResult(Chain, InFlag, CallConv, IsVarArg, Ins, Loc, DAG,
+                         InVals);
+
+}
+SDValue CDMISelLowering::LowerCallResult(
+    SDValue Chain, SDValue InGlue, CallingConv::ID CallConv, bool isVarArg,
+    const SmallVectorImpl<ISD::InputArg> &Ins, SDLoc dl, SelectionDAG &DAG,
+    SmallVectorImpl<SDValue> &InVals) const {
+  assert(!isVarArg && "Unsupported");
+
+  // Assign locations to each value returned by this call.
+  SmallVector<CCValAssign, 16> RVLocs;
+  CCState CCInfo(CallConv, isVarArg, DAG.getMachineFunction(), RVLocs,
+                 *DAG.getContext());
+
+  CCInfo.AnalyzeCallResult(Ins, RetCC_CDM);
+
+  // Copy all of the result registers out of their specified physreg.
+  for (auto &Loc : RVLocs) {
+    Chain = DAG.getCopyFromReg(Chain, dl, Loc.getLocReg(), Loc.getValVT(),
+                               InGlue).getValue(1);
+    InGlue = Chain.getValue(2);
+    InVals.push_back(Chain.getValue(0));
+  }
+
+  return Chain;
 }

@@ -25,6 +25,9 @@ enum NodeType {
   // Return
   Ret,
 
+  // Call
+  Call
+
 };
 } // namespace CDMISD
 
@@ -48,6 +51,13 @@ public:
                       const SmallVectorImpl<ISD::OutputArg> &Outs,
                       LLVMContext &Context) const override;
   const char *getTargetNodeName(unsigned int Opcode) const override;
+  SDValue LowerCall(CallLoweringInfo &CLI,
+                    SmallVectorImpl<SDValue> &InVals) const override;
+  SDValue LowerCallResult(SDValue Chain, SDValue InGlue,
+                          CallingConv::ID CallConv, bool isVarArg,
+                          const SmallVectorImpl<ISD::InputArg> &Ins, SDLoc dl,
+                          SelectionDAG &DAG,
+                          SmallVectorImpl<SDValue> &InVals) const;
 
 private:
   const CDMSubtarget &Subtarget;

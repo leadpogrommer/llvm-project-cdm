@@ -1,7 +1,13 @@
 // custom SDnode for return
 
-def SDT_Cpu0Ret          : SDTypeProfile<0, 1, [SDTCisInt<0>]>;
+def SDT_CDMRet          : SDTypeProfile<0, 1, [SDTCisInt<0>]>;
 def CDMRet               : SDNode<"CDMISD::Ret", SDTNone, [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
+
+def SDT_CDMCall    : SDTypeProfile<0, -1, [SDTCisVT<0, iPTR>]>;
+def CDMCall    : SDNode<"CDMISD::Call", SDT_CDMCall, 
+  [SDNPHasChain, SDNPOutGlue, SDNPOptInGlue,
+                          SDNPVariadic]
+>;
 
 
 def addr: ComplexPattern<iPTR, 2, "SelectAddr", [frameindex], [SDNPWantParent]>;
@@ -170,3 +176,36 @@ def CMP: CDMInst<(outs), (ins CPURegs:$ra, CPURegs:$rb),
                 
 // def : Pat<(brcond (i16 (setlt CPURegs:$ra, CPURegs:$rb)), bb:$dst),
 //           (BLT (CMP CPURegs:$ra, CPURegs:$rb), bb:$dst)>;
+def calltarget  : Operand<iPTR> {
+  let OperandType = "OPERAND_PCREL";
+  // let PrintMethod = "printCallTarget";
+}
+
+def JSR: CDMInst<(outs), (ins calltarget:$target, variable_ops), 
+                  "jsr\t$target", []>{
+                    let isCall = 1;
+}  
+
+def : Pat<(CDMCall (i16 tglobaladdr:$target)), (JSR tglobaladdr:$target)>;
+def : Pat<(CDMCall (i16 texternalsym:$target)), (JSR texternalsym:$target)>;
+
+
+def uimm16       : Operand<i16>;
+def SDT_CDMCallSeqStart : SDCallSeqStart<[SDTCisVT<0, i16>]>;
+def SDT_CDMCallSeqEnd   : SDCallSeqEnd<[SDTCisVT<0, i16>, SDTCisVT<1, i16>]>; 
+// These are target-independent nodes, but have target-specific formats.
+def callseq_start : SDNode<"ISD::CALLSEQ_START", SDT_CDMCallSeqStart,
+                           [SDNPHasChain, SDNPOutGlue]>;
+def callseq_end   : SDNode<"ISD::CALLSEQ_END", SDT_CDMCallSeqEnd,
+                           [SDNPHasChain, SDNPOptInGlue, SDNPOutGlue]>; 
+
+let Defs = [SP], Uses = [SP] in { 
+def ADJCALLSTACKDOWN : CDMPseudo<(outs), (ins uimm16:$amt1, uimm16:$amt2),
+                                  "!ADJCALLSTACKDOWN $amt1",
+                                  [(callseq_start timm:$amt1, timm:$amt2)]>;
+def ADJCALLSTACKUP   : CDMPseudo<(outs), (ins uimm16:$amt1, uimm16:$amt2),
+                                  "!ADJCALLSTACKUP $amt1",
+                                  [(callseq_end timm:$amt1, timm:$amt2)]>;  
+} 
+
+def MOVE : CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs), "move\t$rs, $rd", []>;
