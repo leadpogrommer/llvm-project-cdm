@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="My LLC" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-march=cdm -filetype=asm fib.cdm.ll" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="LLVM" TARGET_NAME="llc" CONFIG_NAME="Debug-clang" RUN_TARGET_PROJECT_NAME="LLVM" RUN_TARGET_NAME="llc">
+  <configuration default="false" name="My LLC" type="CMakeRunConfiguration" factoryName="Application" PROGRAM_PARAMS="-march=cdm -filetype=asm -view-isel-dags fib.cdm.ll" REDIRECT_INPUT="false" ELEVATE="false" USE_EXTERNAL_CONSOLE="false" EMULATE_TERMINAL="false" WORKING_DIR="file://$PROJECT_DIR$" PASS_PARENT_ENVS_2="true" PROJECT_NAME="LLVM" TARGET_NAME="llc" CONFIG_NAME="Debug-clang" RUN_TARGET_PROJECT_NAME="LLVM" RUN_TARGET_NAME="llc">
     <method v="2">
       <option name="com.jetbrains.cidr.execution.CidrBuildBeforeRunTaskProvider$BuildBeforeRunTask" enabled="true" />
     </method>

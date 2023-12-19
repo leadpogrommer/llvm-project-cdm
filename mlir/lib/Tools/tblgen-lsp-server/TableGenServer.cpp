@@ -295,9 +295,9 @@ void TableGenIndex::initialize(const llvm::RecordKeeper &records) {
   for (const llvm::Record &def : llvm::concat<llvm::Record>(classes, defs)) {
     auto *sym = getOrInsertDef(&def);
     insertRef(sym, sym->defLoc, /*isDef=*/true);
-    if(def.getName() == "CallingConv"){
-      def.dump();
-    }
+//    if(def.getName() == "CallingConv"){
+//      def.dump();
+//    }
 
     // Add references to the definition.
     for (SMLoc loc : def.getLoc().drop_front())

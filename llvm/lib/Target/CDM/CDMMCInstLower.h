@@ -22,6 +22,7 @@ public:
   void Initialize(MCContext* C);
   void Lower(const MachineInstr *MI, MCInst &OutMI) const;
   MCOperand LowerOperand(const MachineOperand& MO, unsigned offset = 0) const;
+  MCOperand LowerSymbolOperand(const MachineOperand& MO, unsigned offset = 0) const;
 };
 
 } // namespace llvm

@@ -14,6 +14,12 @@ CDMISelLowering::CDMISelLowering(const CDMTargetMachine &TM,
           addRegisterClass(MVT::i16, &CDM::CPURegsRegClass);
 
           computeRegisterProperties(Subtarget.getRegisterInfo());
+
+          setBooleanContents(ZeroOrOneBooleanContent);
+
+//          setOperationAction(ISD::BR_CC, MVT::i16, Expand);
+          setOperationAction(ISD::SELECT_CC, MVT::i16, Expand);
+//          setOperationAction(ISD::SELECT, MVT::i16, Expand);
 }
 
 #include "CDMFunctionInfo.h"

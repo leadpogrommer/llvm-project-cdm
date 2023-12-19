@@ -7,6 +7,7 @@
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineOperand.h"
+#include "CDMAsmPrinter.h"
 
 namespace llvm {
 CDMMCInstLower::CDMMCInstLower(CDMAsmPrinter &asmPrinter): AsmPrinter(asmPrinter) {}
@@ -35,6 +36,51 @@ MCOperand CDMMCInstLower::LowerOperand(const MachineOperand &MO,
     return MCOperand::createReg(MO.getReg());
   case MachineOperand::MachineOperandType::MO_Immediate:
     return MCOperand::createImm(MO.getImm());
+  case MachineOperand::MO_MachineBasicBlock:
+    return LowerSymbolOperand(MO, offset);
   }
+}
+MCOperand CDMMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
+                                             unsigned int offset) const {
+  MCSymbolRefExpr::VariantKind Kind = MCSymbolRefExpr::VK_None;
+  const MCSymbol *Symbol;
+
+
+
+  switch (MO.getType()) {
+//  case MachineOperand::MO_GlobalAddress:
+//    Symbol = AsmPrinter.getSymbol(MO.getGlobal());
+//    Offset += MO.getOffset();
+//    break;
+
+  case MachineOperand::MO_MachineBasicBlock:
+    Symbol = MO.getMBB()->getSymbol();
+    break;
+
+//  case MachineOperand::MO_BlockAddress:
+//    Symbol = AsmPrinter.GetBlockAddressSymbol(MO.getBlockAddress());
+//    Offset += MO.getOffset();
+//    break;
+//
+//  case MachineOperand::MO_JumpTableIndex:
+//    Symbol = AsmPrinter.GetJTISymbol(MO.getIndex());
+//    break;
+
+  default:
+    llvm_unreachable("<unknown operand type>");
+  }
+
+  const MCExpr *Expr = MCSymbolRefExpr::create(Symbol, Kind, *Ctx);
+
+  if (offset) {
+    // Assume offset is never negative.
+    llvm_unreachable("I am still unsure what is an offset");
+    assert(offset > 0);
+//    Expr = MCBinaryExpr::createAdd(Expr, MCConstantExpr::create(Offset, *Ctx),
+//                                   *Ctx);
+  }
+
+
+  return MCOperand::createExpr(Expr);
 }
 } // namespace llvm
