@@ -27,6 +27,13 @@ public:
     // TODO: stub
     return false;
   }
+
+  // Eliminate ADJCALLSTACKDOWN, ADJCALLSTACKUP pseudo instructions
+  MachineBasicBlock::iterator
+  eliminateCallFramePseudoInstr(MachineFunction &MF, MachineBasicBlock &MBB,
+                                MachineBasicBlock::iterator MI) const override {
+    return MBB.erase(MI);
+  }
 };
 
 } // namespace llvm

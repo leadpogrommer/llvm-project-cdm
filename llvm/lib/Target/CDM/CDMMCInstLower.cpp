@@ -36,22 +36,26 @@ MCOperand CDMMCInstLower::LowerOperand(const MachineOperand &MO,
     return MCOperand::createReg(MO.getReg());
   case MachineOperand::MachineOperandType::MO_Immediate:
     return MCOperand::createImm(MO.getImm());
+  case MachineOperand::MO_RegisterMask:
+    break;
   case MachineOperand::MO_MachineBasicBlock:
+  case MachineOperand::MO_GlobalAddress:
     return LowerSymbolOperand(MO, offset);
   }
+  return MCOperand();
 }
 MCOperand CDMMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
-                                             unsigned int offset) const {
+                                             unsigned int Offset) const {
   MCSymbolRefExpr::VariantKind Kind = MCSymbolRefExpr::VK_None;
   const MCSymbol *Symbol;
 
 
 
   switch (MO.getType()) {
-//  case MachineOperand::MO_GlobalAddress:
-//    Symbol = AsmPrinter.getSymbol(MO.getGlobal());
-//    Offset += MO.getOffset();
-//    break;
+  case MachineOperand::MO_GlobalAddress:
+    Symbol = AsmPrinter.getSymbol(MO.getGlobal());
+    Offset += MO.getOffset(); // Wtf is offset
+    break;
 
   case MachineOperand::MO_MachineBasicBlock:
     Symbol = MO.getMBB()->getSymbol();
@@ -72,10 +76,10 @@ MCOperand CDMMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
 
   const MCExpr *Expr = MCSymbolRefExpr::create(Symbol, Kind, *Ctx);
 
-  if (offset) {
+  if (Offset) {
     // Assume offset is never negative.
     llvm_unreachable("I am still unsure what is an offset");
-    assert(offset > 0);
+    assert(Offset > 0);
 //    Expr = MCBinaryExpr::createAdd(Expr, MCConstantExpr::create(Offset, *Ctx),
 //                                   *Ctx);
   }
