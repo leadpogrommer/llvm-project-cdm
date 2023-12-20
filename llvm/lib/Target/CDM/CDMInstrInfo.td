@@ -97,10 +97,11 @@ def mem : Operand<iPTR> {
   let EncoderMethod = "getMemEncoding";
 }
 
+let Uses = [FP] in {
 def lsw : LoadMStack<"lsw", load_a, mem, 0>;
 // store
 def ssw: StoreMStack<"ssw", store_a, mem, 0>;
-
+} 
 
 // ldi
 
@@ -209,3 +210,24 @@ def ADJCALLSTACKUP   : CDMPseudo<(outs), (ins uimm16:$amt1, uimm16:$amt2),
 } 
 
 def MOVE : CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs), "move\t$rs, $rd", []>;
+
+// push, pop, ldsp, addsp
+// TODO: this is not selected automatically, probably there should be something more
+let Uses = [SP], Defs = [SP] in {
+def POP : CDMInst<(outs CPURegs:$rd), (ins), "pop\t$rd", []>{
+  let mayLoad = 1;
+}
+
+def PUSH : CDMInst<(outs), (ins CPURegs:$rs), "push\t$rs", []>{
+  let mayStore = 1;
+}
+}
+
+def LDSP: CDMInst<(outs CPURegs:$rd), (ins), "ldsp\t$rd", []>{
+  let Uses = [SP];
+}
+
+def ADDSP: CDMInst<(outs), (ins simm16:$imm), "addsp\t$imm", []>{
+  let Uses = [SP];
+  let Defs = [SP];
+} 

@@ -57,6 +57,10 @@ public:
                    const DebugLoc &DL, MCRegister DestReg, MCRegister SrcReg,
                    bool KillSrc) const override;
 
+  void adjustStackPtr(int64_t Amount,
+                                       MachineBasicBlock &MBB,
+                                       MachineBasicBlock::iterator I) const;
+
 private:
   const CDMRegisterInfo RI;
 
