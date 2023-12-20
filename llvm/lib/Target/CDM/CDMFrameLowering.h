@@ -10,19 +10,15 @@
 #include "llvm/CodeGen/TargetFrameLowering.h"
 
 namespace llvm {
-
+class CDMSubtarget;
 class CDMFrameLowering: public TargetFrameLowering {
 public:
 
-  explicit CDMFrameLowering(): TargetFrameLowering(StackGrowsDown, Align(2), 0, Align(2)){}
+  explicit CDMFrameLowering(const CDMSubtarget &Sti): TargetFrameLowering(StackGrowsDown, Align(2), 0, Align(2)), STI(Sti){}
   void emitPrologue(MachineFunction &MF,
-                    MachineBasicBlock &MBB) const override {
-    // TODO
-  }
+                    MachineBasicBlock &MBB) const override;
   void emitEpilogue(MachineFunction &MF,
-                    MachineBasicBlock &MBB) const override {
-    // TODO
-  }
+                    MachineBasicBlock &MBB) const override;
   bool hasFP(const MachineFunction &MF) const override {
     // TODO: stub
     return false;
@@ -34,6 +30,8 @@ public:
                                 MachineBasicBlock::iterator MI) const override {
     return MBB.erase(MI);
   }
+private:
+  const CDMSubtarget &STI;
 };
 
 } // namespace llvm

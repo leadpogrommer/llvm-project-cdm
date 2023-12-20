@@ -87,4 +87,11 @@ void CDMInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
   MIB.addReg(DestReg);
   MIB.addReg(SrcReg, getKillRegState(KillSrc));
 }
+void CDMInstrInfo::adjustStackPtr(int64_t Amount,
+                                  MachineBasicBlock &MBB,
+                                  MachineBasicBlock::iterator I) const {
+  DebugLoc DL = I != MBB.end() ? I->getDebugLoc() : DebugLoc();
+
+  BuildMI(MBB, I, DL, get(CDM::ADDSP)).addImm(Amount);
+}
 } // namespace llvm
