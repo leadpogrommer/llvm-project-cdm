@@ -26,7 +26,9 @@ enum NodeType {
   Ret,
 
   // Call
-  Call
+  Call,
+
+  LOAD_SYM,
 
 };
 } // namespace CDMISD
@@ -58,8 +60,11 @@ public:
                           const SmallVectorImpl<ISD::InputArg> &Ins, SDLoc dl,
                           SelectionDAG &DAG,
                           SmallVectorImpl<SDValue> &InVals) const;
+  SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const override;
 
 private:
+  SDValue lowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const;
+
   const CDMSubtarget &Subtarget;
 };
 

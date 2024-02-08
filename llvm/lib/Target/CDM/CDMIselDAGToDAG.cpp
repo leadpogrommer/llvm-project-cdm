@@ -44,7 +44,7 @@ bool CDMDagToDagIsel::runOnMachineFunction(MachineFunction &MF) {
 bool CDMDagToDagIsel::trySelect(SDNode *Node) {
   return false;   // TODO: actually select
 }
-bool CDMDagToDagIsel::SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base,
+bool CDMDagToDagIsel::SelectAddrFrameIndex(SDNode *Parent, SDValue Addr, SDValue &Base,
                                  SDValue &Offset) {
   EVT ValTy = Addr.getValueType();
   SDLoc DL(Addr);
@@ -56,7 +56,7 @@ bool CDMDagToDagIsel::SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base,
   }
 
   // Cant load not from stack yet
-  LLVM_DEBUG(errs() << "Cant select address");
+  LLVM_DEBUG(errs() << "[LEADP] Cant select frame address\n");
   return false;
 
 }
@@ -106,6 +106,25 @@ bool CDMDagToDagIsel::SelectConditionalBranch(SDNode *N) {
   CurDAG->SelectNodeTo(N, CDM::BCond, MVT::Other, BranchOps);
 
   return true;
+}
+bool CDMDagToDagIsel::SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base,
+                                 SDValue &Offset) {
+  if(isa<FrameIndexSDNode>(Addr)){
+    return false;
+  }
+
+  if(Addr->getOpcode() == ISD::GlobalAddress){
+    Base = Addr;
+    Offset = CurDAG->getTargetConstant(0, SDLoc(Addr), Addr.getValueType());
+    return true;
+  }
+
+  // TODO: maybe I should be more careful here
+  Base = Addr;
+  Offset = CurDAG->getTargetConstant(0, SDLoc(Addr), Addr.getValueType());
+  return true;
+//  LLVM_DEBUG(errs() << "[LEADP] Cant select address\n");
+//  return false;
 }
 
 FunctionPass *llvm::createCDMISelDag(llvm::CDMTargetMachine &TM, CodeGenOpt::Level OptLevel) {

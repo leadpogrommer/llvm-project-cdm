@@ -1485,7 +1485,8 @@ void MCAsmStreamer::emitAlignmentDirective(unsigned ByteAlignment,
 void MCAsmStreamer::emitValueToAlignment(Align Alignment, int64_t Value,
                                          unsigned ValueSize,
                                          unsigned MaxBytesToEmit) {
-  emitAlignmentDirective(Alignment.value(), Value, ValueSize, MaxBytesToEmit);
+  // TODO: do we even need alignment?
+//  emitAlignmentDirective(Alignment.value(), Value, ValueSize, MaxBytesToEmit);
 }
 
 void MCAsmStreamer::emitCodeAlignment(Align Alignment,

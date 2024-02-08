@@ -207,6 +207,19 @@ bool llvm::DisplayGraph(StringRef FilenameRef, bool wait,
       return false;
   }
 #endif
+  // xdot
+  if (S.TryFindProgram("xdot|xdot.py", ViewerPath)) {
+    std::vector<StringRef> args;
+    args.push_back(ViewerPath);
+    args.push_back(Filename);
+
+    args.push_back("-f");
+    args.push_back(getProgramName(program));
+
+    errs() << "Running 'xdot.py' program... ";
+    return ExecGraphViewer(ViewerPath, args, Filename, wait, ErrMsg);
+  }
+
   if (S.TryFindProgram("xdg-open", ViewerPath)) {
     std::vector<StringRef> args;
     args.push_back(ViewerPath);
@@ -223,19 +236,6 @@ bool llvm::DisplayGraph(StringRef FilenameRef, bool wait,
     args.push_back(Filename);
 
     errs() << "Running 'Graphviz' program... ";
-    return ExecGraphViewer(ViewerPath, args, Filename, wait, ErrMsg);
-  }
-
-  // xdot
-  if (S.TryFindProgram("xdot|xdot.py", ViewerPath)) {
-    std::vector<StringRef> args;
-    args.push_back(ViewerPath);
-    args.push_back(Filename);
-
-    args.push_back("-f");
-    args.push_back(getProgramName(program));
-
-    errs() << "Running 'xdot.py' program... ";
     return ExecGraphViewer(ViewerPath, args, Filename, wait, ErrMsg);
   }
 
