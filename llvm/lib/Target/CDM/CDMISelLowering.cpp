@@ -20,6 +20,7 @@ CDMISelLowering::CDMISelLowering(const CDMTargetMachine &TM,
 //          setOperationAction(ISD::BR_CC, MVT::i16, Expand);
           setOperationAction(ISD::SELECT_CC, MVT::i16, Expand);
 //          setOperationAction(ISD::SELECT, MVT::i16, Expand);
+          setOperationAction(ISD::GlobalAddress, MVT::i16, Custom);
 }
 
 #include "CDMFunctionInfo.h"
@@ -155,6 +156,7 @@ const char *CDMISelLowering::getTargetNodeName(unsigned int Opcode) const {
   switch (Opcode) {
     NODE_NAME(Ret);
     NODE_NAME(Call);
+    NODE_NAME(LOAD_SYM);
     default: return NULL;
   }
 }
@@ -298,4 +300,15 @@ SDValue CDMISelLowering::LowerCallResult(
   }
 
   return Chain;
+}
+SDValue CDMISelLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
+  switch (Op.getOpcode()) { case ISD::GlobalAddress: return lowerGlobalAddress(Op, DAG); }
+  return SDValue();
+}
+SDValue CDMISelLowering::lowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const {
+  EVT VT = Op.getValueType();
+  GlobalAddressSDNode *GlobalAddr = cast<GlobalAddressSDNode>(Op.getNode());
+  SDValue TargetAddr =
+      DAG.getTargetGlobalAddress(GlobalAddr->getGlobal(), Op, MVT::i16);
+  return DAG.getNode(CDMISD::LOAD_SYM, Op, VT, TargetAddr);
 }

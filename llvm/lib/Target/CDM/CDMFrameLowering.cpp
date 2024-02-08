@@ -98,7 +98,8 @@ void CDMFrameLowering::emitEpilogue(MachineFunction &MF,
   // Get the number of bytes from FrameInfo
   uint64_t StackSize = MFI.getStackSize();
 
-  if (!StackSize)
+  // This should match condition in emitEpilogue (But sometimes it generates stackframe when it is not needed_
+  if (StackSize == 0 && !MFI.adjustsStack())
     return;
 
   TII.adjustStackPtr(StackSize, MBB, MBBI);

@@ -14,5 +14,7 @@ CDMMCAsmInfo::CDMMCAsmInfo(const Triple &TheTriple) {
   HasSingleParameterDotFile = false;
   HasDotTypeDotSizeDirective = false;
   // TODO: I will fill this later
+
+  Data16bitsDirective = "\tdc\t";
 }
 } // namespace llvm

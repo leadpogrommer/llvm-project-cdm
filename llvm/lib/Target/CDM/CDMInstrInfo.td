@@ -9,8 +9,10 @@ def CDMCall    : SDNode<"CDMISD::Call", SDT_CDMCall,
                           SDNPVariadic]
 >;
 
+// TODO: select addr not on frame (CDMDagToDagIsel)
+def addr_on_frame: ComplexPattern<iPTR, 2, "SelectAddrFrameIndex", [frameindex], [SDNPWantParent]>;
 
-def addr: ComplexPattern<iPTR, 2, "SelectAddr", [frameindex], [SDNPWantParent]>;
+def addr: ComplexPattern<iPTR, 2, "SelectAddr", [], [SDNPWantParent]>;
 
 class CDMInst<dag outs, dag ins, string asmstr, list<dag> pattern>: Instruction
 {
@@ -45,6 +47,8 @@ class arithLogicR<string asm_instr, SDNode OpNode, bit isComm = 0>:
             let isReMaterializable = 1;
           }
 
+def ADD: arithLogicR<"add", add, 1>;
+
 def shamt       : Operand<i16>;
 def immZext3: ImmLeaf<i16, [{return (Imm > 0) && (Imm <= 8);}]>;
 def SHL: CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs, shamt:$shamt),
@@ -68,17 +72,17 @@ class AlignedStore<PatFrag Node> :
 def load_a          : AlignedLoad<load>;
 def store_a         : AlignedStore<store>;
 
-class LoadMStack<string instr_asm, PatFrag OpNode, Operand MemOperand, bit Pseudo>: 
+class LoadM<string instr_asm, PatFrag OpNode, Operand MemOperand, ComplexPattern AddrPattern, bit Pseudo>: 
     CDMInst<(outs CPURegs:$ra), (ins MemOperand:$addr), 
       !strconcat(instr_asm, "\t$ra, $addr"),
-      [(set CPURegs:$ra,(OpNode addr:$addr))]>{
+      [(set CPURegs:$ra,(OpNode AddrPattern:$addr))]>{
         let isPseudo = Pseudo;
       }
 
-class StoreMStack<string instr_asm, PatFrag OpNode, Operand MemOperand, bit Pseudo>:
+class StoreM<string instr_asm, PatFrag OpNode, Operand MemOperand, ComplexPattern AddrPattern, bit Pseudo>:
     CDMInst<(outs), (ins CPURegs:$ra, MemOperand:$addr),
             !strconcat(instr_asm, "\t$ra, $addr"),
-            [(OpNode CPURegs:$ra, addr:$addr)]>{
+            [(OpNode CPURegs:$ra, AddrPattern:$addr)]>{
               let isPseudo = Pseudo;
             }
 
@@ -97,12 +101,20 @@ def mem : Operand<iPTR> {
   let EncoderMethod = "getMemEncoding";
 }
 
+
 let Uses = [FP] in {
-def lsw : LoadMStack<"lsw", load_a, mem, 0>;
+def lsw : LoadM<"lsw", load_a, mem, addr_on_frame, 0>;
 // store
-def ssw: StoreMStack<"ssw", store_a, mem, 0>;
+def ssw: StoreM<"ssw", store_a, mem, addr_on_frame, 0>;
 } 
 
+// def stw: StoreM<"stw", store, mem, addr, 0>;
+
+// def stw: StoreM<"stw", store, mem, addr, 0>;
+// def ldw: LoadM<"ldw", load, mem, addr, 0>;
+// TODO: use TABLES?
+def stw: CDMInst<(outs), (ins CPURegs:$ra, mem:$addr), "stw\t$addr, $ra", [(store CPURegs:$ra, addr:$addr)]>;
+def ldw: CDMInst<(outs CPURegs:$ra), (ins mem:$addr), "ldw\t$addr, $ra", [(set CPURegs:$ra,(load addr:$addr))]>;
 // ldi
 
 def imm16: PatLeaf<(imm), [{return isInt<16>(N->getValue());}]>;
@@ -120,13 +132,15 @@ let isReturn=1, isTerminator=1, isBarrier=1, hasCtrlDep=1 in
   def PseudoRet : CDMPseudo<(outs), (ins), "", [(CDMRet)]>;
 
 
-def ADD: arithLogicR<"add", add, 1>;
 
 /*
  TODO: RET, RetLR
  LD: LoadM32 -> LoadM -> FMem -> FL -> CpuoInst -> Instruction
  My LD: LoadM32 -> LoadM -> CDMInst
 */
+def load_sym : SDNode<"CDMISD::LOAD_SYM", SDTIntUnaryOp>;
+def : Pattern<(i16 (load_sym tglobaladdr:$addr)),  [(ldi $addr)]>;
+
 
 def my_cool_pat_for_ldi: Pat<(i16 imm:$imm),(ldi imm:$imm)>;
 

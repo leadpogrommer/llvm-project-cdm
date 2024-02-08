@@ -20,7 +20,50 @@
 //  return (c+d);
 //}
 
-int fib(int n){
-  if(n <= 1) return n;
-  return fib(n - 1) + fib(n - 2);
+//int a = 228;
+//int b;
+//
+//
+//void add(int  c){
+//   b = a + c;
+//}
+//
+
+int a = 5;
+int b;
+
+
+
+__attribute__((noinline))
+void add(int c){
+  b = a + c;
 }
+
+int main(){
+  add(1337);
+  return b;
+}
+
+
+//void add(int a){
+//  volatile int cntr = a;
+//}
+
+//int fib(int n){
+//  if(n <= 1) return n;
+//  return fib(n - 1) + fib(n - 2);
+//}
+
+//int use_local_var(int a){
+//  volatile int b = a + 1;
+//  return b;
+//}
+
+
+//int s(int a, int b, int c, int d){
+//  return a+b+c+d;
+//}
+//
+//int fib2(int n){
+//  int prev =
+//}
