@@ -309,6 +309,6 @@ SDValue CDMISelLowering::lowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const
   EVT VT = Op.getValueType();
   GlobalAddressSDNode *GlobalAddr = cast<GlobalAddressSDNode>(Op.getNode());
   SDValue TargetAddr =
-      DAG.getTargetGlobalAddress(GlobalAddr->getGlobal(), Op, MVT::i16);
+      DAG.getTargetGlobalAddress(GlobalAddr->getGlobal(), Op, MVT::i16, GlobalAddr->getOffset());
   return DAG.getNode(CDMISD::LOAD_SYM, Op, VT, TargetAddr);
 }

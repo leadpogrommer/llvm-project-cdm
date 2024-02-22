@@ -78,10 +78,10 @@ MCOperand CDMMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
 
   if (Offset) {
     // Assume offset is never negative.
-    llvm_unreachable("I am still unsure what is an offset");
+//    llvm_unreachable("I am still unsure what is an offset");
     assert(Offset > 0);
-//    Expr = MCBinaryExpr::createAdd(Expr, MCConstantExpr::create(Offset, *Ctx),
-//                                   *Ctx);
+    Expr = MCBinaryExpr::createAdd(Expr, MCConstantExpr::create(Offset, *Ctx),
+                                   *Ctx);
   }
 
 
