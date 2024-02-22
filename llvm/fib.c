@@ -31,17 +31,19 @@
 
 int a = 5;
 int b;
+int* ptr;
+//char *str = "fuck";
 
+//__attribute__((noinline))
+//void add(int c){
+//  b = a + c;
+//}
 
-
-__attribute__((noinline))
-void add(int c){
-  b = a + c;
-}
-
-int main(){
-  add(1337);
-  return b;
+int main(int i){
+//  add(1337);
+//  volatile int letter_f = str[0];
+  ptr = &a + i;
+  return ptr[1288];
 }
 
 
