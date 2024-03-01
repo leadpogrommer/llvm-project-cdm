@@ -33,6 +33,9 @@ void CDMDagToDagIsel::Select(SDNode *N) {
   if(N->getOpcode() == ISD::BR_CC){
     SelectConditionalBranch(N);
     return;
+  } else if (N->getOpcode() == ISD::BRCOND){
+    SelectBRCOND(N);
+    return;
   }
 
   SelectCode(N);
@@ -107,6 +110,28 @@ bool CDMDagToDagIsel::SelectConditionalBranch(SDNode *N) {
 
   return true;
 }
+
+bool CDMDagToDagIsel::SelectBRCOND(llvm::SDNode *N) {
+  SDValue Chain = N->getOperand(0);
+  SDValue Cond = N->getOperand(1);
+  SDValue Target = N->getOperand(2);
+
+  EVT TstTys[] = { MVT::Other, MVT::Glue };
+  SDVTList TstVT = CurDAG->getVTList(TstTys);
+  SDValue TstOps[] = {Cond, Chain};
+  SDNode *TST = CurDAG->getMachineNode(CDM::TST, N, TstVT, TstOps);
+
+  SDValue CCVal = CurDAG->getTargetConstant(CDMCOND::NE, N, MVT::i32); // NE == NZ
+  SDValue BranchOps[] = {CCVal, Target, SDValue(TST, 0),
+                         SDValue(TST, 1)};
+
+  CurDAG->SelectNodeTo(N, CDM::BCond, MVT::Other, BranchOps);
+
+
+  return true;
+}
+
+
 bool CDMDagToDagIsel::SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base,
                                  SDValue &Offset) {
   if(isa<FrameIndexSDNode>(Addr)){

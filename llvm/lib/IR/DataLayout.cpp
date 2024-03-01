@@ -519,6 +519,8 @@ Error DataLayout::parseSpecifier(StringRef Desc) {
       case 'a':
         ManglingMode = MM_XCOFF;
         break;
+      case 'C':
+        ManglingMode = MM_CDM;
       }
       break;
     default:

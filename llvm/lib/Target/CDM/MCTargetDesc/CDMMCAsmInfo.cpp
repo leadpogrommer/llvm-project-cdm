@@ -16,5 +16,13 @@ CDMMCAsmInfo::CDMMCAsmInfo(const Triple &TheTriple) {
   // TODO: I will fill this later
 
   Data16bitsDirective = "\tdc\t";
+  Data8bitsDirective = "\tdb\t";
+  ZeroDirective = "\tds\t";
+  AsciiDirective = 0;
+  AscizDirective = 0;
+  PrivateGlobalPrefix = "__L";
+  PrivateLabelPrefix = "__L";
+//  hasPairedDoubleQuoteStringConstants()
+  HasPairedDoubleQuoteStringConstants = false;
 }
 } // namespace llvm

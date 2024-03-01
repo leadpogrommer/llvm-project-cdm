@@ -40,6 +40,7 @@ MCOperand CDMMCInstLower::LowerOperand(const MachineOperand &MO,
     break;
   case MachineOperand::MO_MachineBasicBlock:
   case MachineOperand::MO_GlobalAddress:
+  case MachineOperand::MO_JumpTableIndex:
     return LowerSymbolOperand(MO, offset);
   }
   return MCOperand();
@@ -66,9 +67,9 @@ MCOperand CDMMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
 //    Offset += MO.getOffset();
 //    break;
 //
-//  case MachineOperand::MO_JumpTableIndex:
-//    Symbol = AsmPrinter.GetJTISymbol(MO.getIndex());
-//    break;
+  case MachineOperand::MO_JumpTableIndex:
+    Symbol = AsmPrinter.GetJTISymbol(MO.getIndex());
+    break;
 
   default:
     llvm_unreachable("<unknown operand type>");
