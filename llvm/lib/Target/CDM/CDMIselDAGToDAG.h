@@ -32,6 +32,7 @@ private:
   bool SelectAddrFrameIndex(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset);
   bool SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset);
   bool SelectConditionalBranch(SDNode *N);
+  bool SelectBRCOND(SDNode *N);
 };
 
 FunctionPass *createCDMISelDag(CDMTargetMachine &TM, CodeGenOpt::Level OptLevel);

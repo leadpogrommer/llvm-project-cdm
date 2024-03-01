@@ -48,6 +48,15 @@ class arithLogicR<string asm_instr, SDNode OpNode, bit isComm = 0>:
           }
 
 def ADD: arithLogicR<"add", add, 1>;
+def SUB: arithLogicR<"sub", sub, 0>;
+
+def AND: arithLogicR<"and", and, 1>;
+def OR: arithLogicR<"or", or, 1>;
+def XOR: arithLogicR<"xor", xor, 1>;
+
+
+// def : Pattern<(i16 (load_sym tglobaladdr:$addr)),  [(ldi $addr)]>;
+
 
 def shamt       : Operand<i16>;
 def immZext3: ImmLeaf<i16, [{return (Imm > 0) && (Imm <= 8);}]>;
@@ -72,14 +81,14 @@ class AlignedStore<PatFrag Node> :
 def load_a          : AlignedLoad<load>;
 def store_a         : AlignedStore<store>;
 
-class LoadM<string instr_asm, PatFrag OpNode, Operand MemOperand, ComplexPattern AddrPattern, bit Pseudo>: 
+class LoadMStack<string instr_asm, PatFrag OpNode, Operand MemOperand, ComplexPattern AddrPattern, bit Pseudo>: 
     CDMInst<(outs CPURegs:$ra), (ins MemOperand:$addr), 
       !strconcat(instr_asm, "\t$ra, $addr"),
       [(set CPURegs:$ra,(OpNode AddrPattern:$addr))]>{
         let isPseudo = Pseudo;
       }
 
-class StoreM<string instr_asm, PatFrag OpNode, Operand MemOperand, ComplexPattern AddrPattern, bit Pseudo>:
+class StoreMStack<string instr_asm, PatFrag OpNode, Operand MemOperand, ComplexPattern AddrPattern, bit Pseudo>:
     CDMInst<(outs), (ins CPURegs:$ra, MemOperand:$addr),
             !strconcat(instr_asm, "\t$ra, $addr"),
             [(OpNode CPURegs:$ra, AddrPattern:$addr)]>{
@@ -103,18 +112,44 @@ def mem : Operand<iPTR> {
 
 
 let Uses = [FP] in {
-def lsw : LoadM<"lsw", load_a, mem, addr_on_frame, 0>;
+def lsw : LoadMStack<"lsw", load_a, mem, addr_on_frame, 0>;
 // store
-def ssw: StoreM<"ssw", store_a, mem, addr_on_frame, 0>;
+def ssw: StoreMStack<"ssw", store_a, mem, addr_on_frame, 0>;
 } 
 
 // def stw: StoreM<"stw", store, mem, addr, 0>;
 
-// def stw: StoreM<"stw", store, mem, addr, 0>;
-// def ldw: LoadM<"ldw", load, mem, addr, 0>;
+
 // TODO: use TABLES?
-def stw: CDMInst<(outs), (ins CPURegs:$ra, mem:$addr), "stw\t$addr, $ra", [(store CPURegs:$ra, addr:$addr)]>;
-def ldw: CDMInst<(outs CPURegs:$ra), (ins mem:$addr), "ldw\t$addr, $ra", [(set CPURegs:$ra,(load addr:$addr))]>;
+class LoadM<string instr_asm, PatFrag OpNode, Operand MemOperand, ComplexPattern AddrPattern, bit Pseudo>: 
+    CDMInst<(outs CPURegs:$ra), (ins MemOperand:$addr), 
+      !strconcat(instr_asm, "\t$addr, $ra"),
+      [(set CPURegs:$ra,(OpNode AddrPattern:$addr))]>{
+        let isPseudo = Pseudo;
+      }
+
+class StoreM<string instr_asm, PatFrag OpNode, Operand MemOperand, ComplexPattern AddrPattern, bit Pseudo>:
+    CDMInst<(outs), (ins CPURegs:$ra, MemOperand:$addr),
+            !strconcat(instr_asm, "\t$addr, $ra"),
+            [(OpNode CPURegs:$ra, AddrPattern:$addr)]>{
+              let isPseudo = Pseudo;
+            }
+
+def stw: StoreM<"stw", store, mem, addr, 0>;
+def ldw: LoadM<"ldw", load, mem, addr, 0>;
+
+def ldb: LoadM<"ldb", zextloadi8, mem, addr, 0>;
+def ldsb: LoadM<"ldsb", sextloadi8, mem, addr, 0>;
+def stb: StoreM<"stb", truncstorei8, mem, addr, 0>;
+
+def: Pat <(i16 (extloadi8 addr:$src)), (ldb addr:$src)>;
+
+// sextloadi8
+// zextloadi8
+// truncstorei8
+
+// def stw: CDMInst<(outs), (ins CPURegs:$ra, mem:$addr), "stw\t$addr, $ra", [(store CPURegs:$ra, addr:$addr)]>;
+// def ldw: CDMInst<(outs CPURegs:$ra), (ins mem:$addr), "ldw\t$addr, $ra", [(set CPURegs:$ra,(load addr:$addr))]>;
 // ldi
 
 def imm16: PatLeaf<(imm), [{return isInt<16>(N->getValue());}]>;
@@ -140,6 +175,7 @@ let isReturn=1, isTerminator=1, isBarrier=1, hasCtrlDep=1 in
 */
 def load_sym : SDNode<"CDMISD::LOAD_SYM", SDTIntUnaryOp>;
 def : Pattern<(i16 (load_sym tglobaladdr:$addr)),  [(ldi $addr)]>;
+def : Pattern<(i16 (load_sym tjumptable:$addr)),  [(ldi $addr)]>;
 
 
 def my_cool_pat_for_ldi: Pat<(i16 imm:$imm),(ldi imm:$imm)>;
@@ -168,6 +204,16 @@ def BR: CDMInst<(outs), (ins brtarget:$addr), "br\t$addr", [(br bb:$addr)]>{
   let isBarrier = 1;
 }
 
+// branch indirect
+def stpc: CDMInst<(outs), (ins CPURegs:$rs), "stpc\t$rs", [(brind CPURegs:$rs)]>{
+  let isBranch = 1;
+  let isTerminator = 1;
+  let isBarrier = 1;
+  let isIndirectBranch = 1;
+}
+
+
+// def 
 // class CondBR<string instr_asm>: CDMInst<(outs), (ins SR:$psr, brtarget:$addr),
 //                                         !strconcat(instr_asm, "\t$addr"), []>{
 //                                           let isBranch = 1;
@@ -184,10 +230,18 @@ def BCond: CDMInst<(outs), (ins cond_val:$cond, brtarget:$addr), "b$cond\t$addr"
   let Uses = [PSR]; 
 }
 
+
 def CMP: CDMInst<(outs), (ins CPURegs:$ra, CPURegs:$rb),
                 "cmp\t$ra, $rb", []>{
                   let Defs = [PSR];
                 }
+
+def TST: CDMInst<(outs), (ins CPURegs:$rs), "tst\t$rs", []>{
+  let Defs = [PSR];
+}
+
+// TODO: maybe use PSR from ALU  instructions in branches?
+// def : Pat<(brcond CPURegs:$cond, brtarget:$addr), ()>mo
                 
 // def : Pat<(brcond (i16 (setlt CPURegs:$ra, CPURegs:$rb)), bb:$dst),
 //           (BLT (CMP CPURegs:$ra, CPURegs:$rb), bb:$dst)>;

@@ -64,6 +64,7 @@ public:
 
 private:
   SDValue lowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const;
+  SDValue lowerJumpTable(SDValue Op, SelectionDAG &DAG) const;
 
   const CDMSubtarget &Subtarget;
 };

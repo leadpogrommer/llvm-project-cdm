@@ -21,6 +21,10 @@ CDMISelLowering::CDMISelLowering(const CDMTargetMachine &TM,
           setOperationAction(ISD::SELECT_CC, MVT::i16, Expand);
 //          setOperationAction(ISD::SELECT, MVT::i16, Expand);
           setOperationAction(ISD::GlobalAddress, MVT::i16, Custom);
+
+          setOperationAction(ISD::BR_JT,             MVT::Other, Expand);
+          setOperationAction(ISD::JumpTable,          MVT::i16,   Custom);
+
 }
 
 #include "CDMFunctionInfo.h"
@@ -302,7 +306,10 @@ SDValue CDMISelLowering::LowerCallResult(
   return Chain;
 }
 SDValue CDMISelLowering::LowerOperation(SDValue Op, SelectionDAG &DAG) const {
-  switch (Op.getOpcode()) { case ISD::GlobalAddress: return lowerGlobalAddress(Op, DAG); }
+  switch (Op.getOpcode()) {
+    case ISD::GlobalAddress: return lowerGlobalAddress(Op, DAG);
+    case ISD::JumpTable: return lowerJumpTable(Op, DAG);
+    }
   return SDValue();
 }
 SDValue CDMISelLowering::lowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const {
@@ -311,4 +318,11 @@ SDValue CDMISelLowering::lowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const
   SDValue TargetAddr =
       DAG.getTargetGlobalAddress(GlobalAddr->getGlobal(), Op, MVT::i16, GlobalAddr->getOffset());
   return DAG.getNode(CDMISD::LOAD_SYM, Op, VT, TargetAddr);
+}
+SDValue CDMISelLowering::lowerJumpTable(SDValue Op, SelectionDAG &DAG) const {
+  EVT VT = Op.getValueType();
+  JumpTableSDNode *N = cast<JumpTableSDNode>(Op);
+  // TODO: check if value type is correct
+  SDValue TargetJumpTable = DAG.getTargetJumpTable(N->getIndex(), VT, 0);
+  return DAG.getNode(CDMISD::LOAD_SYM, Op, VT, TargetJumpTable);
 }
