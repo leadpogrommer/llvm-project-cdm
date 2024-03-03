@@ -45,6 +45,7 @@ class arithLogicR<string asm_instr, SDNode OpNode, bit isComm = 0>:
           [(set CPURegs:$rd, (OpNode CPURegs:$rs0, CPURegs:$rs1))]>{
             let isCommutable = isComm;
             let isReMaterializable = 1;
+            let Defs = [PSR];
           }
 
 def ADD: arithLogicR<"add", add, 1>;
@@ -63,7 +64,9 @@ def immZext3: ImmLeaf<i16, [{return (Imm > 0) && (Imm <= 8);}]>;
 def SHL: CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs, shamt:$shamt),
         "shl\t$rs, $rd, $shamt",
         [(set CPURegs:$rd, (shl CPURegs:$rs, immZext3:$shamt))]
->;
+>{
+  let Defs = [PSR];
+}
 
 // load
 class AlignedLoad<PatFrag Node> :
@@ -158,6 +161,8 @@ class LoadImm<Operand Imm>:
   "ldi\t$ra, $imm", []>{
     // TODO; what is this?
     let isReMaterializable = 1;
+    // COSTYL
+    // let Defs = [PSR];
   }
 
 def ldi: LoadImm<simm16>;
@@ -277,7 +282,10 @@ def ADJCALLSTACKUP   : CDMPseudo<(outs), (ins uimm16:$amt1, uimm16:$amt2),
                                   [(callseq_end timm:$amt1, timm:$amt2)]>;  
 } 
 
-def MOVE : CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs), "move\t$rs, $rd", []>;
+// TODO: convert to ArithLogic ???
+def MOVE : CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs), "movens\t$rs, $rd", []>{
+  let Defs = [PSR];
+}
 
 // push, pop, ldsp, addsp
 // TODO: this is not selected automatically, probably there should be something more

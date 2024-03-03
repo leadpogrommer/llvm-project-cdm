@@ -87,9 +87,10 @@ void CDMAsmPrinter::emitFunctionHeader() {
 
 }
 void CDMAsmPrinter::emitStartOfAsmFile(Module &module) {
-//  AsmPrinter::emitStartOfAsmFile(module);
   // TODO: generate name of section
     OutStreamer -> emitRawText("rsect TODO_generate_this_name\n\n");
+    // TODO: this is a fake move. Remove this when actual movens is implemented
+    OutStreamer ->emitRawText("macro movens/2\npush $1\npop $2\nmend\n\n");
 }
 void CDMAsmPrinter::emitEndOfAsmFile(Module &module) {
   OutStreamer-> emitRawText("end.");
