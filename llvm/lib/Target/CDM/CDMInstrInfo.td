@@ -56,6 +56,45 @@ def OR: arithLogicR<"or", or, 1>;
 def XOR: arithLogicR<"xor", xor, 1>;
 
 
+def immZext6: ImmLeaf<i16, [{return (Imm >= 0) && (Imm <= 63);}]>;
+def negimmZext6: ImmLeaf<i16, [{return (Imm <= 0) && (Imm >= -63);}]>;
+
+// thanks avr
+def imm16_neg_XFORM
+    : SDNodeXForm<imm, [{
+                    return CurDAG->getTargetConstant(-N->getAPIntValue(),
+                                                     SDLoc(N), MVT::i16);
+                  }]>;
+// thanks avr
+def imm6_neg : PatLeaf<(imm), [{
+                            int64_t val = -N->getSExtValue();
+                            return val >= 0 && val < 64;
+                          }],
+                          imm16_neg_XFORM>;
+
+class arithLogicRi<string asm_instr, SDNode OpNode>: 
+  CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs, i16imm:$imm),
+          !strconcat(asm_instr, "\t$rs, $imm"),
+          [(set CPURegs:$rd, (OpNode CPURegs:$rs, immZext6:$imm))]>{
+            let isReMaterializable = 1;
+            let Defs = [PSR];
+            let Constraints = "$rs = $rd";
+          }
+// end thanks avr
+
+def ADDI: arithLogicRi<"add", add>;
+def SUBI: arithLogicRi<"sub", sub>;
+
+def : Pat<(add i16
+           : $src1, imm6_neg
+           : $src2),
+          (SUBI i16
+           : $src1, (imm16_neg_XFORM imm
+                     : $src2))>;
+
+// def: Pat <(i16 (extloadi8 addr:$src)), (ldb addr:$src)>;
+
+
 // def : Pattern<(i16 (load_sym tglobaladdr:$addr)),  [(ldi $addr)]>;
 
 
@@ -106,12 +145,15 @@ def simm16      : Operand<i16> {
 
 // }
 
+// Selected in SelectAddr
 def mem : Operand<iPTR> {
   let PrintMethod = "printMemOperand";
   // Why not more(GRPOUT)
-  let MIOperandInfo = (ops CPURegs, simm16);
+  let MIOperandInfo = (ops CPURegs, simm16);  // second operand SHOULD be always zero
   let EncoderMethod = "getMemEncoding";
 }
+
+// TODO: addrRR, memRR
 
 
 let Uses = [FP] in {
@@ -284,7 +326,7 @@ def ADJCALLSTACKUP   : CDMPseudo<(outs), (ins uimm16:$amt1, uimm16:$amt2),
 
 // TODO: convert to ArithLogic ???
 def MOVE : CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs), "movens\t$rs, $rd", []>{
-  let Defs = [PSR];
+  // let Defs = [PSR];
 }
 
 // push, pop, ldsp, addsp
