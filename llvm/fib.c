@@ -182,29 +182,53 @@
 
 
 // case
+//
+//void foo(){
+//  *(int*)0xFF00 = 1337;
+//}
+//
+//int lut(int i){
+//
+//  switch (i) {
+//    case 1:
+//      return i+0xf100;
+//      break;
+//    case 2:
+//      return i+0xf200;
+//    case 3:
+//      *(int*)0xFF00 = 1337;
+//      break;
+//    case 4:
+//      return i+0xf400;;
+//      break;
+//    case 5:
+//      return i+0xf500;
+//    default:
+//      return -1;
+//    }
+//    return 0xBABE;
+//}
 
-void foo(){
-  *(int*)0xFF00 = 1337;
+// addi/subi
+
+int add1(int i){
+  return i + 13;
 }
 
-int lut(int i){
+int add2(int i){
+  return i + 1337;
+}
 
-  switch (i) {
-    case 1:
-      return i+0xf100;
-      break;
-    case 2:
-      return i+0xf200;
-    case 3:
-      *(int*)0xFF00 = 1337;
-      break;
-    case 4:
-      return i+0xf400;;
-      break;
-    case 5:
-      return i+0xf500;
-    default:
-      return -1;
-    }
-    return 0xBABE;
+int add3(int i){
+  return i - 1337;
+}
+
+int add4(int i){
+  return  i - 17;
+}
+
+int arr[10];
+
+int get_i(int i){
+  return arr[i] + arr[i+1];
 }
