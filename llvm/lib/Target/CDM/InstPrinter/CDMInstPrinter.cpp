@@ -53,6 +53,9 @@ void CDMInstPrinter::printOperand(const MCInst *MI, unsigned int OpNo,
 
 void CDMInstPrinter::printMemOperand(const MCInst *MI, unsigned int OpNo,
                                      raw_ostream &O) {
+  if(MI->getOperand(OpNo + 1).isImm()){
+    assert(MI->getOperand(OpNo + 1).getImm() == 0 && "Mem operand can't have non-zero offset");
+  }
   printOperand(MI, OpNo, O);
 }
 void CDMInstPrinter::printRegName(raw_ostream &OS, MCRegister Reg) const {
@@ -74,4 +77,10 @@ void CDMInstPrinter::printCondCode(const MCInst *MI, unsigned int OpNo,
       {CDMCOND::NE, "ne"},
   };
   O << CondMap.at((CDMCOND::CondOp)MI->getOperand(OpNo).getImm());
+}
+void CDMInstPrinter::printMemRROperand(const MCInst *MI, unsigned int OpNo,
+                                       raw_ostream &O) {
+  printOperand(MI, OpNo, O);
+  O << ", ";
+  printOperand(MI, OpNo + 1, O);
 }

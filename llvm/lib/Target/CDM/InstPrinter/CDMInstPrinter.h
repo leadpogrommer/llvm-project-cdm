@@ -25,6 +25,7 @@ public:
 private:
   void printOperand(const MCInst *MI, unsigned OpNo, raw_ostream &O);
   void printMemOperand(const MCInst *MI, unsigned OpNo, raw_ostream &O);
+  void printMemRROperand(const MCInst *MI, unsigned OpNo, raw_ostream &O);
   void printCondCode(const MCInst *MI, unsigned int OpNo,
                      raw_ostream &O);
   void printOperand(const MCInst *MI, uint64_t /*Address*/, unsigned OpNum,

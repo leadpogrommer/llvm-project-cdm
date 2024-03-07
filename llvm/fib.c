@@ -230,5 +230,45 @@ int add4(int i){
 int arr[10];
 
 int get_i(int i){
-  return arr[i] + arr[i+1];
+  return arr[i] + arr[i+1] + arr[3];
 }
+
+void set_i(int i){
+  arr[i] = 1337;
+}
+
+char carr[10];
+char get_ci(int i){
+  return carr[i] + carr[i+1] + carr[3];
+}
+
+void set_ci(int i){
+  carr[i] = 228;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

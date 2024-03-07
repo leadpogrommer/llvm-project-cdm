@@ -152,6 +152,17 @@ bool CDMDagToDagIsel::SelectAddr(SDNode *Parent, SDValue Addr, SDValue &Base,
 //  return false;
 }
 
+// thanks, Sparc
+bool CDMDagToDagIsel::SelectAddrRR(SDValue Addr, SDValue &Base, SDValue &Offset) {
+  if(Addr.getOpcode() == ISD::ADD) {
+    Base = Addr.getOperand(0);
+    Offset = Addr.getOperand(1);
+    return true;
+  }
+
+  return false;
+}
+
 FunctionPass *llvm::createCDMISelDag(llvm::CDMTargetMachine &TM, CodeGenOpt::Level OptLevel) {
   return new CDMDagToDagIsel(TM);
 }

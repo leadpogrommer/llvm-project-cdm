@@ -12,6 +12,7 @@ def CDMCall    : SDNode<"CDMISD::Call", SDT_CDMCall,
 // TODO: select addr not on frame (CDMDagToDagIsel)
 def addr_on_frame: ComplexPattern<iPTR, 2, "SelectAddrFrameIndex", [frameindex], [SDNPWantParent]>;
 
+def addrRR: ComplexPattern<iPTR, 2, "SelectAddrRR", [], []>;
 def addr: ComplexPattern<iPTR, 2, "SelectAddr", [], [SDNPWantParent]>;
 
 class CDMInst<dag outs, dag ins, string asmstr, list<dag> pattern>: Instruction
@@ -153,6 +154,10 @@ def mem : Operand<iPTR> {
   let EncoderMethod = "getMemEncoding";
 }
 
+def memRR: Operand<iPTR> {
+  let PrintMethod = "printMemRROperand";
+  let MIOperandInfo = (ops CPURegs, CPURegs);
+}
 // TODO: addrRR, memRR
 
 
@@ -180,14 +185,37 @@ class StoreM<string instr_asm, PatFrag OpNode, Operand MemOperand, ComplexPatter
               let isPseudo = Pseudo;
             }
 
+// WORD store
+def stwRR: StoreM<"stw", store, memRR, addrRR, 0>;
 def stw: StoreM<"stw", store, mem, addr, 0>;
+// WORD load
+def ldwRR: LoadM<"ldw", load, memRR, addrRR, 0>;
 def ldw: LoadM<"ldw", load, mem, addr, 0>;
 
+// BYTE load zero extend
+def ldbRR: LoadM<"ldb", zextloadi8, memRR, addrRR, 0>;
 def ldb: LoadM<"ldb", zextloadi8, mem, addr, 0>;
+// BYTE load sign extend
+def ldsbRR: LoadM<"ldsb", sextloadi8, memRR, addrRR, 0>;
 def ldsb: LoadM<"ldsb", sextloadi8, mem, addr, 0>;
+// BYTE store truncate
+def stbRR: StoreM<"stb", truncstorei8, memRR, addrRR, 0>;
 def stb: StoreM<"stb", truncstorei8, mem, addr, 0>;
 
+
+def: Pat <(i16 (extloadi8 addrRR:$src)), (ldbRR addrRR:$src)>;
 def: Pat <(i16 (extloadi8 addr:$src)), (ldb addr:$src)>;
+
+
+
+// TODO: ArithLogic?
+// TODO: Why not just sext?
+def Sext: CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs), "sxt\t$rs, $rd", []>{
+  let Defs = [PSR];
+
+}
+
+def : Pat<(i16 (sext_inreg i16:$val, i8)), (Sext $val)>;
 
 // sextloadi8
 // zextloadi8
