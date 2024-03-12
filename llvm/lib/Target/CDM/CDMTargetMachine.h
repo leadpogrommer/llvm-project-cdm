@@ -18,7 +18,7 @@ public:
                    const TargetOptions &Options,
                    std::optional<Reloc::Model> RM,
                    std::optional<CodeModel::Model> CM,
-                   CodeGenOpt::Level OL, bool JIT);
+                   CodeGenOptLevel OL, bool JIT);
   ~CDMTargetMachine() override;
 
   virtual const DataLayout *getDataLayout() const { return &dataLayout; }

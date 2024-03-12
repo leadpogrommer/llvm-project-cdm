@@ -163,6 +163,6 @@ bool CDMDagToDagIsel::SelectAddrRR(SDValue Addr, SDValue &Base, SDValue &Offset)
   return false;
 }
 
-FunctionPass *llvm::createCDMISelDag(llvm::CDMTargetMachine &TM, CodeGenOpt::Level OptLevel) {
+FunctionPass *llvm::createCDMISelDag(llvm::CDMTargetMachine &TM, CodeGenOptLevel OptLevel) {
   return new CDMDagToDagIsel(TM);
 }

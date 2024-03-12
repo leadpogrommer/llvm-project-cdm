@@ -29,7 +29,7 @@ CDMTargetMachine::CDMTargetMachine(const Target &T, const Triple &TT,
                                    const TargetOptions &Options,
                                    std::optional<Reloc::Model> RM,
                                    std::optional<CodeModel::Model> CM,
-                                   CodeGenOpt::Level OL, bool JIT)
+                                   CodeGenOptLevel OL, bool JIT)
     : LLVMTargetMachine(T, computeDataLayout(), TT, CPU, FS,Options, Reloc::Static, CodeModel::Small, OL),
       TLOF(std::make_unique<CDMTargetObjectFile>()), dataLayout(computeDataLayout()), DefaultSubtarget(TT, CPU, FS, *this)
 {

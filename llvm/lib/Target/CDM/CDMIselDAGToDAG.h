@@ -36,7 +36,7 @@ private:
   bool SelectBRCOND(SDNode *N);
 };
 
-FunctionPass *createCDMISelDag(CDMTargetMachine &TM, CodeGenOpt::Level OptLevel);
+FunctionPass *createCDMISelDag(CDMTargetMachine &TM, CodeGenOptLevel OptLevel);
 
 } // namespace llvm
 

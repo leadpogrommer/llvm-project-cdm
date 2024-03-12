@@ -196,7 +196,7 @@ SDValue CDMISelLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   CCInfo.AnalyzeCallOperands(Outs, CC_CDM);
 
   // Get the size of the outgoing arguments stack space requirement.
-  unsigned NextStackOffset = CCInfo.getNextStackOffset();
+  unsigned NextStackOffset = CCInfo.getStackSize();
   unsigned StackAlignment = TFL->getStackAlignment();
   NextStackOffset = alignTo(NextStackOffset, StackAlignment);
   SDValue NextStackOffsetVal = DAG.getIntPtrConstant(NextStackOffset, Loc, true);
