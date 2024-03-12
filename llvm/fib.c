@@ -210,45 +210,60 @@
 //}
 
 // addi/subi
+//
+//int add1(int i){
+//  return i + 13;
+//}
+//
+//int add2(int i){
+//  return i + 1337;
+//}
+//
+//int add3(int i){
+//  return i - 1337;
+//}
+//
+//int add4(int i){
+//  return  i - 17;
+//}
+//
+//int arr[10];
+//
+//int get_i(int i){
+//  return arr[i] + arr[i+1] + arr[3];
+//}
+//
+//void set_i(int i){
+//  arr[i] = 1337;
+//}
+//
+//char carr[10];
+//char get_ci(int i){
+//  return carr[i] + carr[i+1] + carr[3];
+//}
+//
+//void set_ci(int i){
+//  carr[i] = 228;
+//}
 
-int add1(int i){
-  return i + 13;
+// TODO: does not compile
+//int shift8(int i){
+//  return i << 9;
+//}
+
+
+void store_byte_on_stack(char i, int j, char k, int l){
+  volatile char a;
+//  volatile int b;
+//  volatile char c;
+//  volatile int d;
+  a = i;
+//  b = j;
+//  c = k;
+//  d = l;
+  // TODO: It leaves gaps
+
 }
-
-int add2(int i){
-  return i + 1337;
-}
-
-int add3(int i){
-  return i - 1337;
-}
-
-int add4(int i){
-  return  i - 17;
-}
-
-int arr[10];
-
-int get_i(int i){
-  return arr[i] + arr[i+1] + arr[3];
-}
-
-void set_i(int i){
-  arr[i] = 1337;
-}
-
-char carr[10];
-char get_ci(int i){
-  return carr[i] + carr[i+1] + carr[3];
-}
-
-void set_ci(int i){
-  carr[i] = 228;
-}
-
-
-
-
 
 
 
