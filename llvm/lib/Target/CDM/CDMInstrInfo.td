@@ -158,14 +158,18 @@ def memRR: Operand<iPTR> {
   let PrintMethod = "printMemRROperand";
   let MIOperandInfo = (ops CPURegs, CPURegs);
 }
-// TODO: addrRR, memRR
 
 
 let Uses = [FP] in {
+// stack words
 def lsw : LoadMStack<"lsw", load_a, mem, addr_on_frame, 0>;
-// store
 def ssw: StoreMStack<"ssw", store_a, mem, addr_on_frame, 0>;
+// stack bytes
+def ssb: StoreMStack<"ssb", truncstorei8, mem, addr_on_frame, 0>;
+def lsb:  LoadMStack<"lsb", zextloadi8, mem, addr_on_frame, 0>;
+def lssb: LoadMStack<"lssb", sextloadi8, mem, addr_on_frame, 0>;
 } 
+def: Pat <(i16 (extloadi8 addr_on_frame:$src)), (lsb addr_on_frame:$src)>;
 
 // def stw: StoreM<"stw", store, mem, addr, 0>;
 

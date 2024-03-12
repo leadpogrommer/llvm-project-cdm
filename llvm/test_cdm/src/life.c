@@ -70,7 +70,7 @@ void life(char src[N][N], char dst[N][N]){
 #ifdef LIFE_3
 // TODO: this compiles incorrectly
 //__attribute__((noinline))
-static void life(char src[N][N], char dst[N][N]){
+void life(char src[N][N], char dst[N][N]){
   for(int y = 1; y < (N-1); y++){
     VRAM[y][31] = 2;
     for(int x = 1; x < (N-1); x++){
