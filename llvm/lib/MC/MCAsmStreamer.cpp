@@ -58,6 +58,7 @@ class MCAsmStreamer final : public MCStreamer {
   unsigned IsVerboseAsm : 1;
   unsigned ShowInst : 1;
   unsigned UseDwarfDirectory : 1;
+  bool IsCDM;
 
   void EmitRegisterName(int64_t Register);
   void PrintQuotedString(StringRef Data, raw_ostream &OS) const;
@@ -74,7 +75,7 @@ public:
   MCAsmStreamer(MCContext &Context, std::unique_ptr<formatted_raw_ostream> os,
                 bool isVerboseAsm, bool useDwarfDirectory,
                 MCInstPrinter *printer, std::unique_ptr<MCCodeEmitter> emitter,
-                std::unique_ptr<MCAsmBackend> asmbackend, bool showInst)
+                std::unique_ptr<MCAsmBackend> asmbackend, bool showInst, bool isCDM)
       : MCStreamer(Context), OSOwner(std::move(os)), OS(*OSOwner),
         MAI(Context.getAsmInfo()), InstPrinter(printer),
         Assembler(std::make_unique<MCAssembler>(
@@ -82,7 +83,8 @@ public:
             (asmbackend) ? asmbackend->createObjectWriter(NullStream)
                          : nullptr)),
         CommentStream(CommentToEmit), IsVerboseAsm(isVerboseAsm),
-        ShowInst(showInst), UseDwarfDirectory(useDwarfDirectory) {
+        ShowInst(showInst), UseDwarfDirectory(useDwarfDirectory),
+        IsCDM(isCDM) {
     assert(InstPrinter);
     if (IsVerboseAsm)
         InstPrinter->setCommentStream(CommentStream);
@@ -536,7 +538,11 @@ void MCAsmStreamer::emitLabel(MCSymbol *Symbol, SMLoc Loc) {
   MCStreamer::emitLabel(Symbol, Loc);
 
   Symbol->print(OS, MAI);
-  OS << MAI->getLabelSuffix();
+  if(IsCDM){
+    OS << (Symbol->isExternal() ? ">" : ":");
+  } else{
+    OS << MAI->getLabelSuffix();
+  }
 
   EmitEOL();
 }
@@ -2641,8 +2647,8 @@ MCStreamer *llvm::createAsmStreamer(MCContext &Context,
                                     MCInstPrinter *IP,
                                     std::unique_ptr<MCCodeEmitter> &&CE,
                                     std::unique_ptr<MCAsmBackend> &&MAB,
-                                    bool ShowInst) {
+                                    bool ShowInst, bool IsCDM) {
   return new MCAsmStreamer(Context, std::move(OS), isVerboseAsm,
                            useDwarfDirectory, IP, std::move(CE), std::move(MAB),
-                           ShowInst);
+                           ShowInst, IsCDM);
 }

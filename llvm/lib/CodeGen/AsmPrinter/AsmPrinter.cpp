@@ -103,6 +103,7 @@
 #include "llvm/MC/MCTargetOptions.h"
 #include "llvm/MC/MCValue.h"
 #include "llvm/MC/SectionKind.h"
+#include "llvm/MC/TargetRegistry.h"
 #include "llvm/Object/ELFTypes.h"
 #include "llvm/Pass.h"
 #include "llvm/Remarks/RemarkStreamer.h"
@@ -696,7 +697,12 @@ void AsmPrinter::getNameWithPrefix(SmallVectorImpl<char> &Name,
 }
 
 MCSymbol *AsmPrinter::getSymbol(const GlobalValue *GV) const {
-  return TM.getSymbol(GV);
+  auto *Sym = TM.getSymbol(GV);
+  if(IsCDM()){
+    auto Linkage = GV->getLinkage();
+    Sym->setExternal(Linkage == GlobalValue::ExternalWeakLinkage || Linkage == GlobalValue::ExternalLinkage );
+  }
+  return Sym;
 }
 
 MCSymbol *AsmPrinter::getSymbolPreferLocal(const GlobalValue &GV) const {
@@ -707,11 +713,14 @@ MCSymbol *AsmPrinter::getSymbolPreferLocal(const GlobalValue &GV) const {
   // assembler would otherwise be conservative and assume a global default
   // visibility symbol can be interposable, even if the code generator already
   // assumed it.
-  if (TM.getTargetTriple().isOSBinFormatELF() && GV.canBenefitFromLocalAlias()) {
+  if (TM.getTargetTriple().isOSBinFormatELF() && GV.canBenefitFromLocalAlias() && !IsCDM()) {
     const Module &M = *GV.getParent();
     if (TM.getRelocationModel() != Reloc::Static &&
         M.getPIELevel() == PIELevel::Default && GV.isDSOLocal())
       return getSymbolWithGlobalValueBase(&GV, "$local");
+  }
+  if(IsCDM()){
+    return getSymbol(&GV);
   }
   return TM.getSymbol(&GV);
 }
@@ -818,7 +827,7 @@ void AsmPrinter::emitGlobalVariable(const GlobalVariable *GV) {
   // If this is a BSS local symbol and we are emitting in the BSS
   // section use .lcomm/.comm directive.
   if (GVKind.isBSSLocal() &&
-      getObjFileLowering().getBSSSection() == TheSection) {
+      getObjFileLowering().getBSSSection() == TheSection && !IsCDM()) {
     if (Size == 0)
       Size = 1; // .comm Foo, 0 is undefined, avoid it.
 
@@ -4381,3 +4390,4 @@ AsmPrinter::getCodeViewJumpTableInfo(int JTI, const MachineInstr *BranchInstr,
   return std::make_tuple(Base, 0, BranchLabel,
                          codeview::JumpTableEntrySize::Int32);
 }
+bool AsmPrinter::IsCDM() const { return strcmp(TM.getTarget().getName(), "cdm") == 0; }

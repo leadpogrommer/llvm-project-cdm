@@ -7,6 +7,7 @@ add_llvm_component_library(LLVMCDMDesc
         CDMInfo
         Support
         CDMInstPrinter
+        CDMCodeGen
 
         ADD_TO_COMPONENT
         CDM

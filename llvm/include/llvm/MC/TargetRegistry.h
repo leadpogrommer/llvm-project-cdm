@@ -87,7 +87,7 @@ MCStreamer *
 createAsmStreamer(MCContext &Ctx, std::unique_ptr<formatted_raw_ostream> OS,
                   bool isVerboseAsm, bool useDwarfDirectory,
                   MCInstPrinter *InstPrint, std::unique_ptr<MCCodeEmitter> &&CE,
-                  std::unique_ptr<MCAsmBackend> &&TAB, bool ShowInst);
+                  std::unique_ptr<MCAsmBackend> &&TAB, bool ShowInst, bool IsCDM);
 
 MCStreamer *createELFStreamer(MCContext &Ctx,
                               std::unique_ptr<MCAsmBackend> &&TAB,
@@ -654,7 +654,7 @@ public:
     formatted_raw_ostream &OSRef = *OS;
     MCStreamer *S = llvm::createAsmStreamer(
         Ctx, std::move(OS), IsVerboseAsm, UseDwarfDirectory, InstPrint,
-        std::move(CE), std::move(TAB), ShowInst);
+        std::move(CE), std::move(TAB), ShowInst, strcmp(getName(), "cdm") == 0); // TODO: Do not use string comparison
     createAsmTargetStreamer(*S, OSRef, InstPrint, IsVerboseAsm);
     return S;
   }

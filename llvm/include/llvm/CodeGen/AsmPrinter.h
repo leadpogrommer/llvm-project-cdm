@@ -166,6 +166,8 @@ public:
     Debug = 2 ///< Emit .debug_frame
   };
 
+  bool IsCDM() const;
+
 private:
   MCSymbol *CurrentFnEnd = nullptr;
 

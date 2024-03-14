@@ -15,6 +15,7 @@
 #include "llvm/IR/BasicBlock.h"
 #include "llvm/IR/Instructions.h"
 #include "llvm/IR/Mangler.h"
+#include "llvm/IR/Module.h"
 #include "llvm/MC/MCAsmInfo.h"
 #include "llvm/MC/MCInst.h"
 #include "llvm/MC/MCStreamer.h"
@@ -58,9 +59,8 @@ void CDMAsmPrinter::emitFunctionBodyEnd() {
   // TODO
 }
 void CDMAsmPrinter::emitFunctionEntryLabel() {
-//  OutStreamer->emitLabel(CurrentFnSym);
-  // TODO: differentiate between exported and not exported symbols
-  OutStreamer->emitRawText(llvm::formatv("{0}>", CurrentFnSym->getName()));
+  OutStreamer->emitLabel(CurrentFnSym);
+//  OutStreamer->emitRawText(llvm::formatv("{0}>", CurrentFnSym->getName()));
 }
 void CDMAsmPrinter::emitLinkage(const GlobalValue *GV, MCSymbol *GVSym) const {
   // not needed (stub)
@@ -87,10 +87,20 @@ void CDMAsmPrinter::emitFunctionHeader() {
 
 }
 void CDMAsmPrinter::emitStartOfAsmFile(Module &module) {
-  // TODO: generate name of section
-    OutStreamer -> emitRawText("rsect TODO_generate_this_name\n\n");
+    auto FN = module.getSourceFileName();
+
+    std::replace_if(FN.begin(), FN.end(), [](char C){return !(isAlnum(C) || C == '_');}, '_');
+    OutStreamer -> emitRawText(llvm::formatv("rsect _{0}_{1}\n\n", FN, rand()));
+
+    for(auto &GV: module.global_objects()){
+      auto Linkage = GV.getLinkage();
+      if (GV.isDeclaration()){
+        OutStreamer ->emitRawText(llvm::formatv("{0}: ext\n", GV.getName()));
+      }
+    }
+
     // TODO: this is a fake move. Remove this when actual movens is implemented
-    OutStreamer ->emitRawText("macro movens/2\npush $1\npop $2\nmend\n\n");
+    OutStreamer ->emitRawText("\n\nmacro movens/2\npush $1\npop $2\nmend\n\n");
 }
 void CDMAsmPrinter::emitEndOfAsmFile(Module &module) {
   OutStreamer-> emitRawText("end.");
@@ -109,4 +119,5 @@ void CDMAsmTargetStreamer::changeSection(const MCSection *CurSection,
                                          const MCExpr *SubSection,
                                          raw_ostream &OS) {
   // This is a stub. We don't have sections in cdm
+  OS << llvm::formatv("### SECTION: {0}\n", Section->getName());
 }
