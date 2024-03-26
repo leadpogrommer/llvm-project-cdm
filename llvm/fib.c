@@ -266,40 +266,52 @@
 //}
 //
 
+//
+//static char s[32][32];
+//
+//static int static_int = 228;
+//extern int extern_int;
+//int normal_int = 1337;
+//
+//
+//__attribute__((noinline))
+//static int static_fun(){
+//  return s[4][4];
+//}
+//
+//
+//int external_fun();
+//
+//__attribute__((noinline))
+//int normal_fun(){
+//  return 1337;
+//}
+//
+//
+//
+//int main(){
+//  static_fun();
+//  external_fun();
+//  normal_fun();
+//
+//  return static_int + extern_int + normal_int;
+//}
+//
 
-static char s[32][32];
 
-static int static_int = 228;
-extern int extern_int;
-int normal_int = 1337;
 
+extern volatile int UART0_DATA;
 
 __attribute__((noinline))
-static int static_fun(){
-  return s[4][4];
+void write_char_ptr(char* c) {
+  UART0_DATA = *c;
 }
 
+void __bootloader_panic_c() {
+  char c = 'f';
 
-int external_fun();
-
-__attribute__((noinline))
-int normal_fun(){
-  return 1337;
+  write_char_ptr(&c);
 }
-
-
-
-int main(){
-  static_fun();
-  external_fun();
-  normal_fun();
-
-  return static_int + extern_int + normal_int;
-}
-
-
-
-
 
 
 

@@ -381,3 +381,11 @@ def ADDSP: CDMInst<(outs), (ins simm16:$imm), "addsp\t$imm", []>{
   let Uses = [SP];
   let Defs = [SP];
 } 
+
+
+def load_frame_adderss: CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs), "add\t$rs, fp, $rd", []>{
+  let isCodeGenOnly = true;
+  let Uses = [FP];
+}
+
+def : Pat<(i16 addr_on_frame:$addr), (load_frame_adderss (ldi CPURegs:$addr))>;

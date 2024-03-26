@@ -26,6 +26,7 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetLoweringObjectFile.h"
 #include "llvm/Target/TargetOptions.h"
+#include <set>
 
 using namespace llvm;
 
@@ -92,9 +93,11 @@ void CDMAsmPrinter::emitStartOfAsmFile(Module &module) {
     std::replace_if(FN.begin(), FN.end(), [](char C){return !(isAlnum(C) || C == '_');}, '_');
     OutStreamer -> emitRawText(llvm::formatv("rsect _{0}_{1}\n\n", FN, rand()));
 
+    std::set<std::string> prefixes_to_ignore = {"llvm.lifetime."};
+
     for(auto &GV: module.global_objects()){
       auto Linkage = GV.getLinkage();
-      if (GV.isDeclaration()){
+      if (GV.isDeclaration() and std::find_if(prefixes_to_ignore.begin(), prefixes_to_ignore.end(), [&](auto pref){return GV.getName().starts_with(pref);}) == prefixes_to_ignore.end()){
         OutStreamer ->emitRawText(llvm::formatv("{0}: ext\n", GV.getName()));
       }
     }
