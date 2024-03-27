@@ -61,6 +61,9 @@ public:
                           SelectionDAG &DAG,
                           SmallVectorImpl<SDValue> &InVals) const;
   SDValue LowerOperation(SDValue Op, SelectionDAG &DAG) const override;
+  MachineBasicBlock *
+  EmitInstrWithCustomInserter(MachineInstr &MI,
+                              MachineBasicBlock *MBB) const override;
 
 private:
   SDValue lowerGlobalAddress(SDValue Op, SelectionDAG &DAG) const;

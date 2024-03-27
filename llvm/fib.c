@@ -300,27 +300,46 @@
 
 
 
-extern volatile int UART0_DATA;
+//extern volatile int UART0_DATA;
+//
+//__attribute__((noinline))
+//void write_char_ptr(char* c) {
+//  UART0_DATA = *c;
+//}
+//
+//void __bootloader_panic_c() {
+//  char c = 'f';
+//
+//  write_char_ptr(&c);
+//}
+//
+//
+//
+
 
 __attribute__((noinline))
-void write_char_ptr(char* c) {
-  UART0_DATA = *c;
+int f1(int a){
+  return a > 15 ? 1337 : 228;
 }
 
-void __bootloader_panic_c() {
-  char c = 'f';
-
-  write_char_ptr(&c);
+int f2(int a, int b){
+  return a < b;
 }
 
+int f3(_Bool c){
+  return c ? 1447 : 228;
+}
 
+//int foo(int a, int b, _Bool c) {
+////  return c ? 1337 : 228; // select
+//  return a > 15 ? 1337 : 228; // select_cc
+////  return a < b; // setcc
+//}
 
-
-
-
-
-
-
+int main(){
+  volatile int a = f1(16);
+  return f1(3);
+}
 
 
 

@@ -77,6 +77,7 @@ bool CDMDagToDagIsel::SelectConditionalBranch(SDNode *N) {
 
   CondCodeSDNode *CC = cast<CondCodeSDNode>(Cond.getNode());
 
+  // TODO: deduplicate this map
   std::map<ISD::CondCode, CDMCOND::CondOp> CondMap = {
     {ISD::CondCode::SETLT, CDMCOND::LT},
       {ISD::CondCode::SETLE, CDMCOND::LE},

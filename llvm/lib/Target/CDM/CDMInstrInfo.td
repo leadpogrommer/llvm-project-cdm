@@ -310,6 +310,21 @@ def BCond: CDMInst<(outs), (ins cond_val:$cond, brtarget:$addr), "b$cond\t$addr"
 }
 
 
+def cond_as_i16imm: SDNodeXForm<cond, [{
+  return CurDAG->getTargetConstant(N->get(), SDLoc(N), MVT::i16);
+}]>;
+
+def PseudoSelectCC: CDMInst<(outs CPURegs:$dst), (ins CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, cond_val:$cnd), "",[
+  // (set CPURegs:$dst, (selectcc CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, (cond_as_i16imm cond:$cnd)))
+]>{
+  let isPseudo = true;
+  let usesCustomInserter = true;
+}
+
+def : Pat<(selectcc CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, cond:$cnd),
+(PseudoSelectCC CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, (cond_as_i16imm $cnd))
+>;
+
 def CMP: CDMInst<(outs), (ins CPURegs:$ra, CPURegs:$rb),
                 "cmp\t$ra, $rb", []>{
                   let Defs = [PSR];
