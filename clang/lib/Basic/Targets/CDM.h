@@ -80,6 +80,15 @@ public:
   BuiltinVaListKind getBuiltinVaListKind() const override {
     return TargetInfo::VoidPtrBuiltinVaList;
   }
+  CallingConvCheckResult checkCallingConvention(CallingConv CC) const override {
+    switch (CC) {
+      default:
+        return CCCR_Error;
+      case CC_C:
+      case CC_CdmIsr:
+        return CCCR_OK;
+      }
+  }
 };
 } // namespace targets
 } // namespace clang

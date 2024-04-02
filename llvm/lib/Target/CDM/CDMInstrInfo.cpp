@@ -74,7 +74,11 @@ bool CDMInstrInfo::expandPostRAPseudo(MachineInstr &MI) const {
 }
 void CDMInstrInfo::expandRet(MachineBasicBlock &MBB,
                              MachineBasicBlock::iterator I) const {
-  BuildMI(MBB, I, I->getDebugLoc(), get(CDM::rts));
+  auto Opcode = CDM::rts;
+  if(MBB.getParent()->getFunction().getCallingConv() == CallingConv::CdmIsr){
+    Opcode = CDM::rti;
+  }
+  BuildMI(MBB, I, I->getDebugLoc(), get(Opcode));
 }
 void CDMInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                MachineBasicBlock::iterator MI,

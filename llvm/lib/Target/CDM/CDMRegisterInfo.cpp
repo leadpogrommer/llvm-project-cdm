@@ -39,7 +39,13 @@ BitVector CDMRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
 }
 const MCPhysReg *
 CDMRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
-  return CSR_O16_SaveList;
+  switch (MF->getFunction().getCallingConv()) {
+  case CallingConv::C:
+    return CSR_O16_SaveList;
+  case CallingConv::CdmIsr:
+    return CSR_O16_ALL_SaveList;
+  }
+  llvm_unreachable("Unknown calling convention");
 }
 bool CDMRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
                                           int SPAdj, unsigned int FIOperandNum,
@@ -78,7 +84,13 @@ Register CDMRegisterInfo::getFrameRegister(const MachineFunction &MF) const {
 const uint32_t *
 CDMRegisterInfo::getCallPreservedMask(const MachineFunction &MF,
                                       CallingConv::ID id) const {
-  return CSR_O16_RegMask;
+  switch (id) {
+  case CallingConv::C:
+    return CSR_O16_RegMask;
+  case CallingConv::CdmIsr:
+    return CSR_O16_ALL_RegMask;
+  }
+  llvm_unreachable("Unknown calling convention");
 }
 
 } // namespace llvm

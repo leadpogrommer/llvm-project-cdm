@@ -93,7 +93,7 @@ void CDMAsmPrinter::emitStartOfAsmFile(Module &module) {
     std::replace_if(FN.begin(), FN.end(), [](char C){return !(isAlnum(C) || C == '_');}, '_');
     OutStreamer -> emitRawText(llvm::formatv("rsect _{0}_{1}\n\n", FN, rand()));
 
-    std::set<std::string> prefixes_to_ignore = {"llvm.lifetime."};
+    std::set<std::string> prefixes_to_ignore = {"llvm.lifetime.", "llvm."};
 
     for(auto &GV: module.global_objects()){
       auto Linkage = GV.getLinkage();

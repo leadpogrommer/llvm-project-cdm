@@ -296,6 +296,7 @@ namespace clang {
     CC_AMDGPUKernelCall, // __attribute__((amdgpu_kernel))
     CC_M68kRTD,       // __attribute__((m68k_rtd))
     CC_PreserveNone,  // __attribute__((preserve_none))
+    CC_CdmIsr,        // __attribute__((CDM_ISR))
   };
 
   /// Checks whether the given calling convention supports variadic

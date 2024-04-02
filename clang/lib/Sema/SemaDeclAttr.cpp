@@ -5451,6 +5451,9 @@ bool Sema::CheckCallingConvAttr(const ParsedAttr &Attrs, CallingConv &CC,
   case ParsedAttr::AT_PreserveNone:
     CC = CC_PreserveNone;
     break;
+  case ParsedAttr::AT_CDM_ISR:
+    CC = CC_CdmIsr;
+    break;
   default: llvm_unreachable("unexpected attribute kind");
   }
 

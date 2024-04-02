@@ -260,7 +260,7 @@ def : Pattern<(i16 (load_sym tjumptable:$addr)),  [(ldi $addr)]>;
 def my_cool_pat_for_ldi: Pat<(i16 imm:$imm),(ldi imm:$imm)>;
 
 
-class RetBase: CDMInst<(outs), (ins), "rts", []> {
+class RetBase<string instr_asm>: CDMInst<(outs), (ins), instr_asm, []> {
     // TODO: check this flags
     let isReturn = 1;
     let isCodeGenOnly = 1;
@@ -271,7 +271,8 @@ class RetBase: CDMInst<(outs), (ins), "rts", []> {
     let isBarrier=1;
 }
 
-def rts: RetBase;
+def rts: RetBase<"rts">;
+def rti: RetBase<"rti">;
 
 def brtarget: Operand<OtherVT> {
   let OperandType = "OPERAND_MEMORY";

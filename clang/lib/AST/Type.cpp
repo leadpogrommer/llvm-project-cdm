@@ -3441,6 +3441,7 @@ StringRef FunctionType::getNameForCallConv(CallingConv CC) {
   case CC_PreserveAll: return "preserve_all";
   case CC_M68kRTD: return "m68k_rtd";
   case CC_PreserveNone: return "preserve_none";
+  case CC_CdmIsr: return "cdm_isr";
   }
 
   llvm_unreachable("Invalid calling convention.");

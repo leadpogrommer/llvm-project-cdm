@@ -317,29 +317,60 @@
 //
 
 
-__attribute__((noinline))
-int f1(int a){
-  return a > 15 ? 1337 : 228;
-}
-
-int f2(int a, int b){
-  return a < b;
-}
-
-int f3(_Bool c){
-  return c ? 1447 : 228;
-}
-
-//int foo(int a, int b, _Bool c) {
-////  return c ? 1337 : 228; // select
-//  return a > 15 ? 1337 : 228; // select_cc
-////  return a < b; // setcc
+//__attribute__((noinline))
+//int f1(int a){
+//  return a > 15 ? 1337 : 228;
 //}
+//
+//int f2(int a, int b){
+//  return a < b;
+//}
+//
+//int f3(_Bool c){
+//  return c ? 1447 : 228;
+//}
+//
+////int foo(int a, int b, _Bool c) {
+//////  return c ? 1337 : 228; // select
+////  return a > 15 ? 1337 : 228; // select_cc
+//////  return a < b; // setcc
+////}
+//
+//int main(){
+//  volatile int a = f1(16);
+//  return f1(3);
+//}
+//
+//
+//
 
-int main(){
-  volatile int a = f1(16);
-  return f1(3);
+
+// ISR CC
+
+volatile int tick;
+
+// correct
+__attribute__((noinline))
+void some_fun(){
+  tick++;
+}
+
+// almost correct
+__attribute__((noinline))
+void some_fun_calling_fun(){
+  some_fun();
+}
+
+// correct
+__attribute__((noinline))
+__attribute__((CDM_ISR))
+void some_isr(){
+  tick++;
 }
 
 
-
+__attribute__((noinline))
+__attribute__((CDM_ISR))
+void some_isr_calling_fun(){
+  some_fun();
+}

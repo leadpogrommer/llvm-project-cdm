@@ -1070,6 +1070,9 @@ void TypePrinter::printFunctionAfter(const FunctionType::ExtInfo &Info,
     case CC_PreserveNone:
       OS << " __attribute__((preserve_none))";
       break;
+    case CC_CdmIsr:
+      OS << " __attribute__((CDM_ISR))";
+      break;
     }
   }
 

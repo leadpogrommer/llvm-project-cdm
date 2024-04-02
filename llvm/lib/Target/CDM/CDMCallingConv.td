@@ -11,3 +11,6 @@ def RetCC_CDM : CallingConv<[
 
 def CSR_O16 : CalleeSavedRegs<(add FP,
                                    (sequence "R%u", 4, 6))>;
+
+def CSR_O16_ALL : CalleeSavedRegs<(add FP,
+(sequence "R%u", 0, 6))>;

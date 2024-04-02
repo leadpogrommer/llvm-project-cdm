@@ -456,6 +456,7 @@ def TargetX86 : TargetArch<["x86"]>;
 def TargetAnyX86 : TargetArch<["x86", "x86_64"]>;
 def TargetWebAssembly : TargetArch<["wasm32", "wasm64"]>;
 def TargetNVPTX : TargetArch<["nvptx", "nvptx64"]>;
+def TargetCDM : TargetArch<["cdm"]>;
 def TargetWindows : TargetSpec {
   let OSes = ["Win32"];
 }
@@ -4497,4 +4498,9 @@ def CountedBy : InheritableAttr {
       SourceRange getCountedByFieldLoc() const { return CountedByFieldLoc; }
       void setCountedByFieldLoc(SourceRange Loc) { CountedByFieldLoc = Loc; }
   }];
+}
+
+def CDM_ISR : DeclOrTypeAttr, TargetSpecificAttr<TargetCDM> {
+  let Spellings = [GCC<"CDM_ISR">];
+  let Documentation = [Undocumented];
 }
