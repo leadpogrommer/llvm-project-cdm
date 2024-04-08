@@ -99,14 +99,21 @@ def : Pat<(add i16
 // def : Pattern<(i16 (load_sym tglobaladdr:$addr)),  [(ldi $addr)]>;
 
 
-def shamt       : Operand<i16>;
+def shamt: Operand<i16>;
 def immZext3: ImmLeaf<i16, [{return (Imm > 0) && (Imm <= 8);}]>;
-def SHL: CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs, shamt:$shamt),
-        "shl\t$rs, $rd, $shamt",
-        [(set CPURegs:$rd, (shl CPURegs:$rs, immZext3:$shamt))]
->{
+
+class ShiftImm3<string instr_asm, SDNode OpNode> :
+  CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs, shamt:$shamt),
+     !strconcat(instr_asm, "\t$rs, $rd, $shamt"),
+     [(set CPURegs:$rd, (OpNode CPURegs:$rs, immZext3:$shamt))]> {
   let Defs = [PSR];
 }
+
+def SHL  : ShiftImm3<"shl", shl>;
+def SHRA : ShiftImm3<"shra", sra>;
+def SHR  : ShiftImm3<"shr", srl>;
+def ROL  : ShiftImm3<"rol", rotl>;
+def ROR  : ShiftImm3<"ror", rotr>;
 
 // load
 class AlignedLoad<PatFrag Node> :
