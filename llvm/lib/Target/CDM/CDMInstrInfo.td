@@ -98,22 +98,34 @@ def : Pat<(add i16
 
 // def : Pattern<(i16 (load_sym tglobaladdr:$addr)),  [(ldi $addr)]>;
 
-
+// Shift amount
 def shamt: Operand<i16>;
-def immZext3: ImmLeaf<i16, [{return (Imm > 0) && (Imm <= 8);}]>;
 
-class ShiftImm3<string instr_asm, SDNode OpNode> :
-  CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs, shamt:$shamt),
-     !strconcat(instr_asm, "\t$rs, $rd, $shamt"),
-     [(set CPURegs:$rd, (OpNode CPURegs:$rs, immZext3:$shamt))]> {
-  let Defs = [PSR];
+// Immediate values with specific ranges (immM_N -> [M; N])
+def imm1_8: ImmLeaf<i16, [{return (Imm >= 1) && (Imm <= 8);}]>;
+def imm9_16: ImmLeaf<i16, [{return (Imm >= 9) && (Imm <= 16);}]>;
+
+// Shifts base class
+multiclass ShiftImm<string instr_asm, SDNode OpNode> {
+  let Defs = [PSR] in {
+    def _1_8 : CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs, shamt:$shamt),
+                        !strconcat(instr_asm, "\t$rs, $rd, $shamt"),
+                        [(set CPURegs:$rd, (OpNode CPURegs:$rs, imm1_8:$shamt))]>;
+
+    def _9_16 : CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs, shamt:$shamt),
+                        !strconcat(
+                          !strconcat(instr_asm, "\t$rs, $rd, 8\n\t"),
+                          !strconcat(instr_asm, "\t$rd, $rd, $shamt-8")
+                        ),
+                        [(set CPURegs:$rd, (OpNode CPURegs:$rs, imm9_16:$shamt))]>;
+  }
 }
 
-def SHL  : ShiftImm3<"shl", shl>;
-def SHRA : ShiftImm3<"shra", sra>;
-def SHR  : ShiftImm3<"shr", srl>;
-def ROL  : ShiftImm3<"rol", rotl>;
-def ROR  : ShiftImm3<"ror", rotr>;
+defm SHL  : ShiftImm<"shl", shl>;
+defm SHRA : ShiftImm<"shra", sra>;
+defm SHR  : ShiftImm<"shr", srl>;
+defm ROL  : ShiftImm<"rol", rotl>;
+defm ROR  : ShiftImm<"ror", rotr>;
 
 // load
 class AlignedLoad<PatFrag Node> :
