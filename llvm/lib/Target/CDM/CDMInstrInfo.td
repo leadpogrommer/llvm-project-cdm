@@ -304,36 +304,96 @@ def cond_val: Operand<OtherVT> {
   let PrintMethod = "printCondCode";
 }
 
-def BCond: CDMInst<(outs), (ins cond_val:$cond, brtarget:$addr), "b$cond\t$addr", []>{
-  let isTerminator = 1;
-  let isBranch = 1;
-  let Uses = [PSR]; 
-}
-
 
 def cond_as_i16imm: SDNodeXForm<cond, [{
   return CurDAG->getTargetConstant(N->get(), SDLoc(N), MVT::i16);
 }]>;
 
-def PseudoSelectCC: CDMInst<(outs CPURegs:$dst), (ins CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, cond_val:$cnd), "",[
-  // (set CPURegs:$dst, (selectcc CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, (cond_as_i16imm cond:$cnd)))
-]>{
-  let isPseudo = true;
-  let usesCustomInserter = true;
-}
+// def PseudoSelectCC: CDMInst<(outs CPURegs:$dst), (ins CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, cond_val:$cnd), "",[
+//   // (set CPURegs:$dst, (selectcc CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, (cond_as_i16imm cond:$cnd)))
+// ]>{
+//   let isPseudo = true;
+//   let usesCustomInserter = true;
+// }
 
-def : Pat<(selectcc CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, cond:$cnd),
-(PseudoSelectCC CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, (cond_as_i16imm $cnd))
->;
+// def : Pat<(selectcc CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, cond:$cnd),
+// (PseudoSelectCC CPURegs:$lhs, CPURegs:$rhs, CPURegs:$vtrue, CPURegs:$vfalse, (cond_as_i16imm $cnd))
+// >;
 
-def CMP: CDMInst<(outs), (ins CPURegs:$ra, CPURegs:$rb),
-                "cmp\t$ra, $rb", []>{
-                  let Defs = [PSR];
+// def BCond: CDMInst<(outs), (ins cond_val:$cond, brtarget:$addr), "b$cond\t$addr", []>{
+//   let isTerminator = 1;
+//   let isBranch = 1;
+//   let Uses = [PSR]; 
+// }
+
+class CondBranch<string instr_asm> : CDMInst<(outs), (ins SR:$rd, brtarget:$addr),
+            !strconcat(instr_asm, "\t$addr\t\t# use $rd"),
+            []> {
+              let isTerminator = 1;
+              let isBranch = 1;
+              // let Uses = [PSR]; 
+            }
+
+// class CondBranch<string instr_asm, RegisterClass RC,
+//                    list<Register> UseRegs>:
+//   FJ<op, (outs), (ins cond_val:$cond, brtarget:$addr),
+//              !strconcat(instr_asm, "\t$ra, $addr"),
+//              [], IIBranch>, Requires<[HasCmp]> {
+//   let isBranch = 1;
+//   let isTerminator = 1;
+//   let hasDelaySlot = 1;
+// //  let Predicates = [HasCmp]; // same effect as Requires
+// }
+
+def BEQ     : CondBranch<"beq">;
+def BNE     : CondBranch<"bne">;
+def BLT     : CondBranch<"blt">;
+def BGT     : CondBranch<"bgt">;
+def BLE     : CondBranch<"ble">;
+def BGE     : CondBranch<"bge">;
+
+def CMP: CDMInst<(outs SR:$rdef), (ins CPURegs:$ra, CPURegs:$rb),
+                "cmp\t$ra, $rb\t\t# def $rdef", []>{
+                  // let Defs = [PSR];
                 }
 
-def TST: CDMInst<(outs), (ins CPURegs:$rs), "tst\t$rs", []>{
-  let Defs = [PSR];
+// def TST: CDMInst<(outs), (ins CPURegs:$rs), "tst\t$rs", []>{
+//   let Defs = [PSR];
+// }
+
+multiclass BrcondPatsCmp<RegisterClass RC, Instruction JEQOp, Instruction JNEOp, 
+Instruction JLTOp, Instruction JGTOp, Instruction JLEOp, Instruction JGEOp, 
+Instruction CMPOp> {
+  def : Pat<(brcond (i16 (seteq RC:$lhs, RC:$rhs)), bb:$dst),
+            (JEQOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setueq RC:$lhs, RC:$rhs)), bb:$dst),
+            (JEQOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setne RC:$lhs, RC:$rhs)), bb:$dst),
+            (JNEOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setune RC:$lhs, RC:$rhs)), bb:$dst),
+            (JNEOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setlt RC:$lhs, RC:$rhs)), bb:$dst),
+            (JLTOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setult RC:$lhs, RC:$rhs)), bb:$dst),
+            (JLTOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setgt RC:$lhs, RC:$rhs)), bb:$dst),
+            (JGTOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setugt RC:$lhs, RC:$rhs)), bb:$dst),
+            (JGTOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setle RC:$lhs, RC:$rhs)), bb:$dst),
+            (JLEOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setule RC:$lhs, RC:$rhs)), bb:$dst),
+            (JLEOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setge RC:$lhs, RC:$rhs)), bb:$dst),
+            (JGEOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+  def : Pat<(brcond (i16 (setuge RC:$lhs, RC:$rhs)), bb:$dst),
+            (JGEOp (CMPOp RC:$lhs, RC:$rhs), bb:$dst)>;
+
+  // def : Pat<(brcond RC:$cond, bb:$dst),
+  //         (JNEOp (TST RC:$cond), bb:$dst)>;
 }
+
+defm : BrcondPatsCmp<CPURegs, BEQ, BNE, BLT, BGT, BLE, BGE, CMP>;
 
 // TODO: maybe use PSR from ALU  instructions in branches?
 // def : Pat<(brcond CPURegs:$cond, brtarget:$addr), ()>mo
@@ -373,7 +433,7 @@ def ADJCALLSTACKUP   : CDMPseudo<(outs), (ins uimm16:$amt1, uimm16:$amt2),
 } 
 
 // TODO: convert to ArithLogic ???
-def MOVE : CDMInst<(outs CPURegs:$rd), (ins CPURegs:$rs), "movens\t$rs, $rd", []>{
+def MOVE : CDMInst<(outs SR:$psr, CPURegs:$rd), (ins CPURegs:$rs), "movens\t$rs, $rd\t\t# def $psr", []>{
   // let Defs = [PSR];
 }
 

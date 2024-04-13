@@ -30,13 +30,13 @@ void CDMDagToDagIsel::Select(SDNode *N) {
     return;
   }
 
-  if(N->getOpcode() == ISD::BR_CC){
-    SelectConditionalBranch(N);
-    return;
-  } else if (N->getOpcode() == ISD::BRCOND){
-    SelectBRCOND(N);
-    return;
-  }
+  // if(N->getOpcode() == ISD::BR_CC){
+  //   SelectConditionalBranch(N);
+  //   return;
+  // } else if (N->getOpcode() == ISD::BRCOND){
+  //   SelectBRCOND(N);
+  //   return;
+  // }
 
   SelectCode(N);
 
@@ -69,64 +69,64 @@ bool CDMDagToDagIsel::SelectAddrFrameIndex(SDNode *Parent, SDValue Addr, SDValue
 // Until I figure out how to use tablegen for this
 // TODO: !important! use tablegen for branches
 bool CDMDagToDagIsel::SelectConditionalBranch(SDNode *N) {
-  SDValue Chain = N->getOperand(0);
-  SDValue Cond = N->getOperand(1);
-  SDValue LHS = N->getOperand(2);
-  SDValue RHS = N->getOperand(3);
-  SDValue Target = N->getOperand(4);
+  // SDValue Chain = N->getOperand(0);
+  // SDValue Cond = N->getOperand(1);
+  // SDValue LHS = N->getOperand(2);
+  // SDValue RHS = N->getOperand(3);
+  // SDValue Target = N->getOperand(4);
 
-  CondCodeSDNode *CC = cast<CondCodeSDNode>(Cond.getNode());
+  // CondCodeSDNode *CC = cast<CondCodeSDNode>(Cond.getNode());
 
-  // TODO: deduplicate this map
-  std::map<ISD::CondCode, CDMCOND::CondOp> CondMap = {
-    {ISD::CondCode::SETLT, CDMCOND::LT},
-      {ISD::CondCode::SETLE, CDMCOND::LE},
-      {ISD::CondCode::SETGT, CDMCOND::GT},
-      {ISD::CondCode::SETGE, CDMCOND::GE},
-      {ISD::CondCode::SETULT, CDMCOND::LO},
-      {ISD::CondCode::SETULE, CDMCOND::LS},
-      {ISD::CondCode::SETUGT, CDMCOND::HI},
-      {ISD::CondCode::SETUGE, CDMCOND::HS},
-      {ISD::CondCode::SETEQ, CDMCOND::EQ},
-      {ISD::CondCode::SETNE, CDMCOND::NE},
-  };
+  // // TODO: deduplicate this map
+  // std::map<ISD::CondCode, CDMCOND::CondOp> CondMap = {
+  //   {ISD::CondCode::SETLT, CDMCOND::LT},
+  //     {ISD::CondCode::SETLE, CDMCOND::LE},
+  //     {ISD::CondCode::SETGT, CDMCOND::GT},
+  //     {ISD::CondCode::SETGE, CDMCOND::GE},
+  //     {ISD::CondCode::SETULT, CDMCOND::LO},
+  //     {ISD::CondCode::SETULE, CDMCOND::LS},
+  //     {ISD::CondCode::SETUGT, CDMCOND::HI},
+  //     {ISD::CondCode::SETUGE, CDMCOND::HS},
+  //     {ISD::CondCode::SETEQ, CDMCOND::EQ},
+  //     {ISD::CondCode::SETNE, CDMCOND::NE},
+  // };
 
-  if(!CondMap.count(CC->get())){
-    LLVM_DEBUG(errs() << "Unknown branch condition");
-    return false;
-  }
+  // if(!CondMap.count(CC->get())){
+  //   LLVM_DEBUG(errs() << "Unknown branch condition");
+  //   return false;
+  // }
 
-  EVT CompareTys[] = { MVT::Other, MVT::Glue };
-  SDVTList CompareVT = CurDAG->getVTList(CompareTys);
-  SDValue CompareOps[] = {LHS, RHS, Chain};
-  // TODO: long compare???
-  SDNode *Compare = CurDAG->getMachineNode(CDM::CMP, N, CompareVT, CompareOps);
+  // EVT CompareTys[] = { MVT::Other, MVT::Glue };
+  // SDVTList CompareVT = CurDAG->getVTList(CompareTys);
+  // SDValue CompareOps[] = {LHS, RHS, Chain};
+  // // TODO: long compare???
+  // SDNode *Compare = CurDAG->getMachineNode(CDM::CMP, N, CompareVT, CompareOps);
 
 
-  SDValue CCVal = CurDAG->getTargetConstant(CondMap[CC->get()], N, MVT::i32);
-  SDValue BranchOps[] = {CCVal, Target, SDValue(Compare, 0),
-                         SDValue(Compare, 1)};
+  // SDValue CCVal = CurDAG->getTargetConstant(CondMap[CC->get()], N, MVT::i32);
+  // SDValue BranchOps[] = {CCVal, Target, SDValue(Compare, 0),
+  //                        SDValue(Compare, 1)};
 
-  CurDAG->SelectNodeTo(N, CDM::BCond, MVT::Other, BranchOps);
+  // CurDAG->SelectNodeTo(N, CDM::BCond, MVT::Other, BranchOps);
 
   return true;
 }
 
 bool CDMDagToDagIsel::SelectBRCOND(llvm::SDNode *N) {
-  SDValue Chain = N->getOperand(0);
-  SDValue Cond = N->getOperand(1);
-  SDValue Target = N->getOperand(2);
+  // SDValue Chain = N->getOperand(0);
+  // SDValue Cond = N->getOperand(1);
+  // SDValue Target = N->getOperand(2);
 
-  EVT TstTys[] = { MVT::Other, MVT::Glue };
-  SDVTList TstVT = CurDAG->getVTList(TstTys);
-  SDValue TstOps[] = {Cond, Chain};
-  SDNode *TST = CurDAG->getMachineNode(CDM::TST, N, TstVT, TstOps);
+  // EVT TstTys[] = { MVT::Other, MVT::Glue };
+  // SDVTList TstVT = CurDAG->getVTList(TstTys);
+  // SDValue TstOps[] = {Cond, Chain};
+  // SDNode *TST = CurDAG->getMachineNode(CDM::TST, N, TstVT, TstOps);
 
-  SDValue CCVal = CurDAG->getTargetConstant(CDMCOND::NE, N, MVT::i32); // NE == NZ
-  SDValue BranchOps[] = {CCVal, Target, SDValue(TST, 0),
-                         SDValue(TST, 1)};
+  // SDValue CCVal = CurDAG->getTargetConstant(CDMCOND::NE, N, MVT::i32); // NE == NZ
+  // SDValue BranchOps[] = {CCVal, Target, SDValue(TST, 0),
+  //                        SDValue(TST, 1)};
 
-  CurDAG->SelectNodeTo(N, CDM::BCond, MVT::Other, BranchOps);
+  // CurDAG->SelectNodeTo(N, CDM::BCond, MVT::Other, BranchOps);
 
 
   return true;

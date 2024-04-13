@@ -88,6 +88,7 @@ void CDMInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
   assert(CDM::CPURegsRegClass.contains(SrcReg) && CDM::CPURegsRegClass.contains(DestReg) && "Can only copy General purpose regs");
   // TODO: check order
   MachineInstrBuilder MIB = BuildMI(MBB, MI, DL, get(CDM::MOVE));
+  MIB.addReg(CDM::PSR);
   MIB.addReg(DestReg);
   MIB.addReg(SrcReg, getKillRegState(KillSrc));
 }

@@ -29,7 +29,7 @@ CDMRegisterInfo::CDMRegisterInfo(): CDMGenRegisterInfo(CDM::PC) {}
 BitVector CDMRegisterInfo::getReservedRegs(const MachineFunction &MF) const {
   BitVector Reserved(getNumRegs());
   static const std::array ReservedCPURegs {
-      CDM::FP, CDM::SP, CDM::PSR, CDM::PC
+      CDM::FP, CDM::SP, /*CDM::PSR, */CDM::PC
   };
 
   for (unsigned I = 0; I < ReservedCPURegs.size(); ++I)

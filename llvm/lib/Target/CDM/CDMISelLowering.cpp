@@ -17,11 +17,11 @@ CDMISelLowering::CDMISelLowering(const CDMTargetMachine &TM,
 
           setBooleanContents(ZeroOrOneBooleanContent);
 
-//          setOperationAction(ISD::BR_CC, MVT::i16, Expand);
+         setOperationAction(ISD::BR_CC, MVT::i16, Expand);
 
-//          setOperationAction(ISD::SELECT_CC, MVT::i16, Expand);
-          setOperationAction(ISD::SELECT, MVT::i16, Expand);
-          setOperationAction(ISD::SETCC, MVT::i16, Expand);
+        //  setOperationAction(ISD::SELECT_CC, MVT::i16, Expand);
+          // setOperationAction(ISD::SELECT, MVT::i16, Expand);
+          // setOperationAction(ISD::SETCC, MVT::i16, Expand);
 //          setOperationAction(ISD::SELECT_CC, MVT::i16, Custom);
 
           setOperationAction(ISD::GlobalAddress, MVT::i16, Custom);
@@ -336,57 +336,59 @@ MachineBasicBlock *
 CDMISelLowering::EmitInstrWithCustomInserter(MachineInstr &MI,
                                              MachineBasicBlock *MBB) const {
 
-  assert(MI.getOpcode() == CDM::PseudoSelectCC && "Unexpected instr type to insert");
+  // assert(MI.getOpcode() == CDM::PseudoSelectCC && "Unexpected instr type to insert");
 
-  const CDMInstrInfo &TII = *(const CDMInstrInfo *)MBB->getParent()->getSubtarget().getInstrInfo();
-  DebugLoc DL = MI.getDebugLoc();
+  // const CDMInstrInfo &TII = *(const CDMInstrInfo *)MBB->getParent()->getSubtarget().getInstrInfo();
+  // DebugLoc DL = MI.getDebugLoc();
 
-  auto Dst = MI.getOperand(0);
-  auto Lhs = MI.getOperand(1);
-  auto Rhs = MI.getOperand(2);
-  auto TrueVal = MI.getOperand(3);
-  auto FalseVal = MI.getOperand(4);
-  auto CondCode = static_cast<ISD::CondCode>(MI.getOperand(5).getImm());
+  // auto Dst = MI.getOperand(0);
+  // auto Lhs = MI.getOperand(1);
+  // auto Rhs = MI.getOperand(2);
+  // auto TrueVal = MI.getOperand(3);
+  // auto FalseVal = MI.getOperand(4);
+  // auto CondCode = static_cast<ISD::CondCode>(MI.getOperand(5).getImm());
 
-  const BasicBlock *LLVM_BB = MBB->getBasicBlock();
+  // const BasicBlock *LLVM_BB = MBB->getBasicBlock();
 
-  MachineBasicBlock *HeadMBB = MBB;
-  MachineFunction *F = MBB->getParent();
-  MachineBasicBlock *TailMBB = F->CreateMachineBasicBlock(LLVM_BB);
-  MachineBasicBlock *IfFalseMBB = F->CreateMachineBasicBlock(LLVM_BB);
+  // MachineBasicBlock *HeadMBB = MBB;
+  // MachineFunction *F = MBB->getParent();
+  // MachineBasicBlock *TailMBB = F->CreateMachineBasicBlock(LLVM_BB);
+  // MachineBasicBlock *IfFalseMBB = F->CreateMachineBasicBlock(LLVM_BB);
 
-  MachineFunction::iterator I = ++MBB->getIterator();
+  // MachineFunction::iterator I = ++MBB->getIterator();
 
-  F->insert(I, IfFalseMBB);
-  F->insert(I, TailMBB);
+  // F->insert(I, IfFalseMBB);
+  // F->insert(I, TailMBB);
 
-  TailMBB->splice(TailMBB->begin(), HeadMBB,
-                   std::next(MachineBasicBlock::iterator(MI)), HeadMBB->end());
+  // TailMBB->splice(TailMBB->begin(), HeadMBB,
+  //                  std::next(MachineBasicBlock::iterator(MI)), HeadMBB->end());
 
-  TailMBB->transferSuccessorsAndUpdatePHIs(HeadMBB);
-  HeadMBB->addSuccessor(IfFalseMBB);
-  HeadMBB->addSuccessor(TailMBB);
-  IfFalseMBB->addSuccessor(TailMBB);
+  // TailMBB->transferSuccessorsAndUpdatePHIs(HeadMBB);
+  // HeadMBB->addSuccessor(IfFalseMBB);
+  // HeadMBB->addSuccessor(TailMBB);
+  // IfFalseMBB->addSuccessor(TailMBB);
 
-  MachineInstr* CMPInst = BuildMI(HeadMBB, DL, TII.get(CDM::CMP))
-      .addReg(Lhs.getReg())
-      .addReg(Rhs.getReg())
-      .getInstr();
+  // MachineInstr* CMPInst = BuildMI(HeadMBB, DL, TII.get(CDM::CMP))
+  //     .addReg(Lhs.getReg())
+  //     .addReg(Rhs.getReg())
+  //     .getInstr();
 
-  // TODO: check if glue needed
+  // // TODO: check if glue needed
 
-  BuildMI(HeadMBB, DL, TII.get(CDM::BCond))
-      .addImm(TII.CCToCondOp(CondCode))
-      .addMBB(TailMBB);
+  // BuildMI(HeadMBB, DL, TII.get(CDM::BCond))
+  //     .addImm(TII.CCToCondOp(CondCode))
+  //     .addMBB(TailMBB);
 
-  BuildMI(*TailMBB, TailMBB->begin(), DL, TII.get(CDM::PHI),
-          Dst.getReg())
-      .addReg(TrueVal.getReg())
-      .addMBB(HeadMBB)
-      .addReg(FalseVal.getReg())
-      .addMBB(IfFalseMBB);
+  // BuildMI(*TailMBB, TailMBB->begin(), DL, TII.get(CDM::PHI),
+  //         Dst.getReg())
+  //     .addReg(TrueVal.getReg())
+  //     .addMBB(HeadMBB)
+  //     .addReg(FalseVal.getReg())
+  //     .addMBB(IfFalseMBB);
 
-  MI.eraseFromParent();
+  // MI.eraseFromParent();
 
-  return TailMBB;
+  // return TailMBB;
+
+  return nullptr;
 }
