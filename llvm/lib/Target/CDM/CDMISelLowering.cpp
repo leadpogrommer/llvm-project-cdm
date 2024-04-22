@@ -240,11 +240,17 @@ SDValue CDMISelLowering::LowerCall(TargetLowering::CallLoweringInfo &CLI,
   }
 
   // We only support calling global addresses.
-  GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee);
-  assert(G && "We only support the calling of global addresses");
-
   EVT PtrVT = getPointerTy(DAG.getDataLayout());
-  Callee = DAG.getTargetGlobalAddress(G->getGlobal(), Loc, PtrVT, 0);
+
+  if(GlobalAddressSDNode *G = dyn_cast<GlobalAddressSDNode>(Callee)){
+    Callee = DAG.getTargetGlobalAddress(G->getGlobal(), Loc, PtrVT, 0);
+  } else if(ExternalSymbolSDNode *S = dyn_cast<ExternalSymbolSDNode>(Callee)){
+    Callee = DAG.getTargetExternalSymbol(S->getSymbol(), PtrVT, 0);
+  } else{
+    llvm_unreachable("We only support the calling of global addresses and external symbols");
+  }
+
+
 
   std::vector<SDValue> Ops;
   Ops.push_back(Chain);

@@ -99,6 +99,8 @@ void CDMAsmPrinter::emitStartOfAsmFile(Module &module) {
       auto Linkage = GV.getLinkage();
       if (GV.isDeclaration() and std::find_if(prefixes_to_ignore.begin(), prefixes_to_ignore.end(), [&](auto pref){return GV.getName().starts_with(pref);}) == prefixes_to_ignore.end()){
         OutStreamer ->emitRawText(llvm::formatv("{0}: ext\n", GV.getName()));
+      } else if(GV.isDeclaration() and GV.getName() == "llvm.memset.p0.i16") { // TODO: handle intrinsics correctly, this is temporary fix
+        OutStreamer ->emitRawText(llvm::formatv("{0}: ext\n", "memset"));
       }
     }
 
