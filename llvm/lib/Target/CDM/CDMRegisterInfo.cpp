@@ -41,6 +41,8 @@ const MCPhysReg *
 CDMRegisterInfo::getCalleeSavedRegs(const MachineFunction *MF) const {
   switch (MF->getFunction().getCallingConv()) {
   case CallingConv::C:
+  case CallingConv::Fast:
+  case CallingConv::Cold:
     return CSR_O16_SaveList;
   case CallingConv::CdmIsr:
     return CSR_O16_ALL_SaveList;
@@ -86,6 +88,8 @@ CDMRegisterInfo::getCallPreservedMask(const MachineFunction &MF,
                                       CallingConv::ID id) const {
   switch (id) {
   case CallingConv::C:
+  case CallingConv::Fast:
+  case CallingConv::Cold:
     return CSR_O16_RegMask;
   case CallingConv::CdmIsr:
     return CSR_O16_ALL_RegMask;
