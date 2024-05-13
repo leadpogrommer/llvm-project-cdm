@@ -26,6 +26,10 @@
 #include "llvm/Support/raw_ostream.h"
 #include "llvm/Target/TargetLoweringObjectFile.h"
 #include "llvm/Target/TargetOptions.h"
+#include "llvm/IR/DebugInfoMetadata.h"
+#include "llvm/IR/DebugLoc.h"
+#include "llvm/Support/Path.h"
+#include "llvm/ADT/StringMap.h"
 #include <set>
 
 using namespace llvm;
@@ -33,10 +37,65 @@ using namespace llvm;
 extern "C" void LLVMInitializeCDMAsmPrinter(){
   RegisterAsmPrinter<CDMAsmPrinter> X(getTheCDMTarget());
 }
+
+std::optional<int> CDMAsmPrinter::getSourceFileIndex(StringRef checksum) {
+  if (this->sourceFiles.contains(checksum)) {
+    return this->sourceFiles.lookup(checksum);
+  }
+
+  return std::nullopt;
+}
+
+void CDMAsmPrinter::collectAndEmitSourceFiles(Module &module) {
+  for (Function &function : module) {
+    for (BasicBlock &basic_block : function) {
+      for (Instruction &instruction : basic_block) {
+        DILocation *debugLoc = instruction.getDebugLoc().get();
+
+        if (debugLoc) {
+          StringRef checksum = debugLoc->getFile()->getChecksum().value().Value;
+
+          StringRef dirRef = debugLoc->getFile()->getDirectory();
+          StringRef fileRef = debugLoc->getFile()->getFilename();
+
+          auto dir = Twine(llvm::sys::path::remove_leading_dotslash(dirRef));
+          auto file = Twine(llvm::sys::path::remove_leading_dotslash(fileRef));
+
+          std::string rawPath = dir.concat("/").concat(file).str();
+
+          std::string path = llvm::sys::path::convert_to_slash(rawPath);
+
+          if (!getSourceFileIndex(checksum)) {
+            OutStreamer->emitRawText(formatv("dbg_file {0}, \"{1}\"\n", this->sourceFiles.size(), path));
+            this->sourceFiles.insert({checksum, this->sourceFiles.size()});
+          }
+        }
+      }
+    }
+  }
+
+  OutStreamer->emitRawText("\n\n");
+}
+
 void CDMAsmPrinter::emitInstruction(const MachineInstr *Instr) {
   if (Instr->isDebugValue()) {
     // TODO: implement
     return;
+  }
+
+  DILocation *debugLoc = Instr->getDebugLoc().get();
+
+  if (debugLoc) {
+    StringRef checksum = debugLoc->getFile()->getChecksum().value().Value;
+
+    std::optional<int> sourceFileIndex = getSourceFileIndex(checksum);
+
+    if (sourceFileIndex) {
+      OutStreamer->emitRawText(formatv("\tdbg_loc {0}, {1}, {2}\n",
+                                       *sourceFileIndex, 
+                                       debugLoc->getLine(),
+                                       debugLoc->getColumn()));
+    }
   }
 
   MachineBasicBlock::const_instr_iterator I = Instr->getIterator();
@@ -87,7 +146,10 @@ void CDMAsmPrinter::emitFunctionHeader() {
   emitFunctionEntryLabel();
 
 }
+
 void CDMAsmPrinter::emitStartOfAsmFile(Module &module) {
+    collectAndEmitSourceFiles(module);
+    
     auto FN = module.getSourceFileName();
 
     std::replace_if(FN.begin(), FN.end(), [](char C){return !(isAlnum(C) || C == '_');}, '_');
