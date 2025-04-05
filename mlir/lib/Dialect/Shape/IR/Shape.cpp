@@ -11,6 +11,7 @@
 #include "mlir/Dialect/Shape/IR/Shape.h"
 
 #include "mlir/Dialect/Arith/IR/Arith.h"
+#include "mlir/Dialect/Bufferization/IR/BufferizableOpInterface.h"
 #include "mlir/Dialect/CommonFolders.h"
 #include "mlir/Dialect/Tensor/IR/Tensor.h"
 #include "mlir/Dialect/Traits.h"
@@ -64,9 +65,8 @@ LogicalResult shape::getShapeVec(Value input,
 }
 
 static bool isErrorPropagationPossible(TypeRange operandTypes) {
-  return llvm::any_of(operandTypes, [](Type ty) {
-    return llvm::isa<SizeType, ShapeType, ValueShapeType>(ty);
-  });
+  return llvm::any_of(operandTypes,
+                      llvm::IsaPred<SizeType, ShapeType, ValueShapeType>);
 }
 
 static LogicalResult verifySizeOrIndexOp(Operation *op) {
@@ -143,6 +143,8 @@ void ShapeDialect::initialize() {
   // still evolving it makes it simple to start with an unregistered ops and
   // try different variants before actually defining the op.
   allowUnknownOperations();
+  declarePromisedInterfaces<bufferization::BufferizableOpInterface, AssumingOp,
+                            AssumingYieldOp>();
 }
 
 Operation *ShapeDialect::materializeConstant(OpBuilder &builder,
@@ -693,8 +695,16 @@ struct RemoveEmptyShapeOperandsPattern : public OpRewritePattern<OpTy> {
       }
       return true;
     };
-    auto newOperands = llvm::to_vector<8>(
-        llvm::make_filter_range(op->getOperands(), isPotentiallyNonEmptyShape));
+    auto newOperands = llvm::filter_to_vector<8>(op->getOperands(),
+                                                 isPotentiallyNonEmptyShape);
+
+    // Replace the op with empty shape constant if all operants are reduced to
+    // be empty.
+    if (newOperands.empty()) {
+      rewriter.replaceOpWithNewOp<ConstShapeOp>(
+          op, op->getResultTypes().front(), rewriter.getIndexTensorAttr({}));
+      return success();
+    }
 
     // Reduce op to equivalent without empty shape operands.
     if (newOperands.size() < op.getNumOperands()) {
@@ -1114,7 +1124,7 @@ OpFoldResult DivOp::fold(FoldAdaptor adaptor) {
   if (!lhs)
     return nullptr;
   auto rhs = llvm::dyn_cast_if_present<IntegerAttr>(adaptor.getRhs());
-  if (!rhs)
+  if (!rhs || rhs.getValue().isZero())
     return nullptr;
 
   // Division in APInt does not follow floor(lhs, rhs) when the result is
@@ -1287,7 +1297,7 @@ void FuncOp::build(OpBuilder &builder, OperationState &state, StringRef name,
   if (argAttrs.empty())
     return;
   assert(type.getNumInputs() == argAttrs.size());
-  function_interface_impl::addArgAndResultAttrs(
+  call_interface_impl::addArgAndResultAttrs(
       builder, state, argAttrs, /*resultAttrs=*/std::nullopt,
       getArgAttrsAttrName(state.name), getResAttrsAttrName(state.name));
 }
@@ -1700,18 +1710,49 @@ struct ShapeOfOpToConstShapeOp : public OpRewritePattern<shape::ShapeOfOp> {
   }
 };
 
-struct ShapeOfWithTensor : public OpRewritePattern<shape::ShapeOfOp> {
+// Canonicalize
+//
+// %0 = tensor.reshape %input(%shape) : (tensor<*xf32>, tensor<?xindex>) -> tensor<*xf32>
+// %1 = shape.shape_of %0 : tensor<*xf32> -> tensor<?xindex>
+//
+// to
+//
+// %0 = tensor.reshape %input(%shape) : (tensor<*xf32>, tensor<?xindex>) -> tensor<*xf32>
+// %1 = %shape
+//
+struct ShapeOfFromReshape : public OpRewritePattern<shape::ShapeOfOp> {
   using OpRewritePattern<shape::ShapeOfOp>::OpRewritePattern;
 
   LogicalResult matchAndRewrite(shape::ShapeOfOp op,
                                 PatternRewriter &rewriter) const override {
-    if (!llvm::isa<ShapedType>(op.getArg().getType()))
-      return failure();
-    if (llvm::isa<ShapedType>(op.getType()))
-      return failure();
+    auto tensorReshapeOp = op.getArg().getDefiningOp<tensor::ReshapeOp>();
+    if (!tensorReshapeOp)
+      return rewriter.notifyMatchFailure(op, "producer is not tensor.reshape");
+    if (!isa<TensorType>(op.getType()))
+      return rewriter.notifyMatchFailure(op, "result is not a tensor");
 
-    rewriter.replaceOpWithNewOp<shape::ShapeOfOp>(op.getOperation(),
-                                                  op.getArg());
+    // Operand 'shape' of 'tensor.reshape' may now be used as the result of
+    // 'shape.shape_of'. While its type is guaranteed to be compatible in well-
+    // formed IR, it may not be identical (dynamically vs statically shaped),
+    // in which case it needs to be cast first using 'tensor.cast'.
+    // Additionally, it may not have identical element type (i32 vs index)
+    // while it has identical shaped type (dynamic vs static), in which case it
+    // needs to be cast first using 'arith.index_cast'. Note: 'shape.shape_of'
+    // op result must be shape or extent tensor.
+    Value shape = tensorReshapeOp.getShape();
+
+    auto opTensorTy = cast<RankedTensorType>(op.getType());
+    auto shapeTensorTy = cast<RankedTensorType>(shape.getType());
+
+    if (opTensorTy != shapeTensorTy) {
+      if (opTensorTy.getElementType() == shapeTensorTy.getElementType())
+        shape = rewriter.create<tensor::CastOp>(op.getLoc(), opTensorTy, shape);
+      else if (!isExtentTensorType(shapeTensorTy))
+        shape =
+            rewriter.create<arith::IndexCastOp>(op.getLoc(), opTensorTy, shape);
+    }
+
+    rewriter.replaceOp(op, shape);
     return success();
   }
 };
@@ -1751,7 +1792,7 @@ struct ShapeOfCastExtentTensor : public OpRewritePattern<tensor::CastOp> {
 
 void ShapeOfOp::getCanonicalizationPatterns(RewritePatternSet &patterns,
                                             MLIRContext *context) {
-  patterns.add<ShapeOfCastExtentTensor, ShapeOfWithTensor,
+  patterns.add<ShapeOfCastExtentTensor, ShapeOfFromReshape,
                ExtractFromShapeOfExtentTensor, ShapeOfOpToConstShapeOp>(
       context);
 }

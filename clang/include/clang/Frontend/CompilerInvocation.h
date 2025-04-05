@@ -269,12 +269,8 @@ public:
   /// @{
   using CompilerInvocationBase::LangOpts;
   using CompilerInvocationBase::TargetOpts;
-  using CompilerInvocationBase::DiagnosticOpts;
   std::shared_ptr<HeaderSearchOptions> getHeaderSearchOptsPtr() {
     return HSOpts;
-  }
-  std::shared_ptr<PreprocessorOptions> getPreprocessorOptsPtr() {
-    return PPOpts;
   }
   std::shared_ptr<LangOptions> getLangOptsPtr() { return LangOpts; }
   /// @}
@@ -304,6 +300,15 @@ public:
   /// \param MainAddr - The address of main (or some other function in the main
   /// executable), for finding the builtin compiler path.
   static std::string GetResourcesPath(const char *Argv0, void *MainAddr);
+
+  /// Populate \p Opts with the default set of pointer authentication-related
+  /// options given \p LangOpts and \p Triple.
+  ///
+  /// Note: This is intended to be used by tools which must be aware of
+  /// pointer authentication-related code generation, e.g. lldb.
+  static void setDefaultPointerAuthOptions(PointerAuthOptions &Opts,
+                                           const LangOptions &LangOpts,
+                                           const llvm::Triple &Triple);
 
   /// Retrieve a module hash string that is suitable for uniquely
   /// identifying the conditions under which the module was built.

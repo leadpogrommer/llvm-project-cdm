@@ -18,7 +18,9 @@
 /*  Constant                                  Value
     __cpp_lib_as_const                        201510L [C++17]
     __cpp_lib_constexpr_algorithms            201806L [C++20]
+                                              202306L [C++26]
     __cpp_lib_constexpr_utility               201811L [C++20]
+    __cpp_lib_constrained_equality            202403L [C++26]
     __cpp_lib_exchange_function               201304L [C++14]
     __cpp_lib_forward_like                    202207L [C++23]
     __cpp_lib_integer_comparison_functions    202002L [C++20]
@@ -46,6 +48,10 @@
 
 # ifdef __cpp_lib_constexpr_utility
 #   error "__cpp_lib_constexpr_utility should not be defined before c++20"
+# endif
+
+# ifdef __cpp_lib_constrained_equality
+#   error "__cpp_lib_constrained_equality should not be defined before c++26"
 # endif
 
 # ifdef __cpp_lib_exchange_function
@@ -96,6 +102,10 @@
 
 # ifdef __cpp_lib_constexpr_utility
 #   error "__cpp_lib_constexpr_utility should not be defined before c++20"
+# endif
+
+# ifdef __cpp_lib_constrained_equality
+#   error "__cpp_lib_constrained_equality should not be defined before c++26"
 # endif
 
 # ifndef __cpp_lib_exchange_function
@@ -158,6 +168,10 @@
 
 # ifdef __cpp_lib_constexpr_utility
 #   error "__cpp_lib_constexpr_utility should not be defined before c++20"
+# endif
+
+# ifdef __cpp_lib_constrained_equality
+#   error "__cpp_lib_constrained_equality should not be defined before c++26"
 # endif
 
 # ifndef __cpp_lib_exchange_function
@@ -226,6 +240,10 @@
 # endif
 # if __cpp_lib_constexpr_utility != 201811L
 #   error "__cpp_lib_constexpr_utility should have the value 201811L in c++20"
+# endif
+
+# ifdef __cpp_lib_constrained_equality
+#   error "__cpp_lib_constrained_equality should not be defined before c++26"
 # endif
 
 # ifndef __cpp_lib_exchange_function
@@ -297,6 +315,10 @@
 # endif
 # if __cpp_lib_constexpr_utility != 201811L
 #   error "__cpp_lib_constexpr_utility should have the value 201811L in c++23"
+# endif
+
+# ifdef __cpp_lib_constrained_equality
+#   error "__cpp_lib_constrained_equality should not be defined before c++26"
 # endif
 
 # ifndef __cpp_lib_exchange_function
@@ -386,8 +408,8 @@
 # ifndef __cpp_lib_constexpr_algorithms
 #   error "__cpp_lib_constexpr_algorithms should be defined in c++26"
 # endif
-# if __cpp_lib_constexpr_algorithms != 201806L
-#   error "__cpp_lib_constexpr_algorithms should have the value 201806L in c++26"
+# if __cpp_lib_constexpr_algorithms != 202306L
+#   error "__cpp_lib_constexpr_algorithms should have the value 202306L in c++26"
 # endif
 
 # ifndef __cpp_lib_constexpr_utility
@@ -395,6 +417,19 @@
 # endif
 # if __cpp_lib_constexpr_utility != 201811L
 #   error "__cpp_lib_constexpr_utility should have the value 201811L in c++26"
+# endif
+
+# if !defined(_LIBCPP_VERSION)
+#   ifndef __cpp_lib_constrained_equality
+#     error "__cpp_lib_constrained_equality should be defined in c++26"
+#   endif
+#   if __cpp_lib_constrained_equality != 202403L
+#     error "__cpp_lib_constrained_equality should have the value 202403L in c++26"
+#   endif
+# else // _LIBCPP_VERSION
+#   ifdef __cpp_lib_constrained_equality
+#     error "__cpp_lib_constrained_equality should not be defined because it is unimplemented in libc++!"
+#   endif
 # endif
 
 # ifndef __cpp_lib_exchange_function

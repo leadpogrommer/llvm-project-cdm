@@ -7,7 +7,7 @@
 //===----------------------------------------------------------------------===//
 //
 // This file implements a function which calls the Generic Delta pass in order
-// to reduce uninteresting DPValues from defined functions.
+// to reduce uninteresting DbgVariableRecords from defined functions.
 //
 //===----------------------------------------------------------------------===//
 
@@ -15,11 +15,9 @@
 #define LLVM_TOOLS_LLVM_REDUCE_DELTAS_REDUCEDBGRECORDS_H
 
 #include "Delta.h"
-#include "llvm/IR/BasicBlock.h"
-#include "llvm/IR/DebugProgramInstruction.h"
 
 namespace llvm {
-void reduceDbgRecordDeltaPass(TestRunner &Test);
+void reduceDbgRecordDeltaPass(Oracle &O, ReducerWorkItem &WorkItem);
 } // namespace llvm
 
 #endif

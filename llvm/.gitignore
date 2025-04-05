@@ -31,7 +31,8 @@ autoconf/autom4te.cache
 # Visual Studio built-in CMake configuration
 /CMakeSettings.json
 # CLion project configuration
-#/.idea
+/.idea
+/cmake-build*
 # Qt Creator project configuration
 /CMakeLists.txt.user
 

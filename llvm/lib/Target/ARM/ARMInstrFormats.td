@@ -155,7 +155,11 @@ def iflags_op : Operand<i32> {
 
 // ARM Predicate operand. Default to 14 = always (AL). Second part is CC
 // register whose default is 0 (no register).
-def CondCodeOperand : AsmOperandClass { let Name = "CondCode"; }
+def CondCodeOperand : AsmOperandClass {
+  let Name = "CondCode";
+  let DefaultMethod = "defaultCondCodeOp";
+  let IsOptional = true;
+}
 def pred : PredicateOperand<OtherVT, (ops i32imm, i32imm),
                                      (ops (i32 14), (i32 zero_reg))> {
   let PrintMethod = "printPredicateOperand";
@@ -163,18 +167,12 @@ def pred : PredicateOperand<OtherVT, (ops i32imm, i32imm),
   let DecoderMethod = "DecodePredicateOperand";
 }
 
-// Selectable predicate operand for CMOV instructions. We can't use a normal
-// predicate because the default values interfere with instruction selection. In
-// all other respects it is identical though: pseudo-instruction expansion
-// relies on the MachineOperands being compatible.
-def cmovpred : Operand<i32>, PredicateOp,
-               ComplexPattern<i32, 2, "SelectCMOVPred"> {
-  let MIOperandInfo = (ops i32imm, i32imm);
-  let PrintMethod = "printPredicateOperand";
-}
-
 // Conditional code result for instructions whose 's' bit is set, e.g. subs.
-def CCOutOperand : AsmOperandClass { let Name = "CCOut"; }
+def CCOutOperand : AsmOperandClass {
+  let Name = "CCOut";
+  let DefaultMethod = "defaultCCOutOp";
+  let IsOptional = true;
+}
 def cc_out : OptionalDefOperand<OtherVT, (ops CCR), (ops (i32 zero_reg))> {
   let EncoderMethod = "getCCOutOpValue";
   let PrintMethod = "printSBitModifierOperand";
@@ -202,10 +200,14 @@ def inv_cond_XFORM : SDNodeXForm<imm, [{
 def VPTPredNOperand : AsmOperandClass {
   let Name = "VPTPredN";
   let PredicateMethod = "isVPTPred";
+  let DefaultMethod = "defaultVPTPredOp";
+  let IsOptional = true;
 }
 def VPTPredROperand : AsmOperandClass {
   let Name = "VPTPredR";
   let PredicateMethod = "isVPTPred";
+  let DefaultMethod = "defaultVPTPredOp";
+  let IsOptional = true;
 }
 
 // Operand classes for the cluster of MC operands describing a
@@ -468,7 +470,7 @@ class InstThumb<AddrMode am, int sz, IndexMode im,
 // These are aliases that require C++ handling to convert to the target
 // instruction, while InstAliases can be handled directly by tblgen.
 class AsmPseudoInst<string asm, dag iops, dag oops = (outs)>
-  : InstTemplate<AddrModeNone, 0, IndexModeNone, Pseudo, GenericDomain,
+  : InstTemplate<AddrModeNone, 4, IndexModeNone, Pseudo, GenericDomain,
                  "", NoItinerary> {
   let OutOperandList = oops;
   let InOperandList = iops;
@@ -684,6 +686,8 @@ class AIstr_ex_or_rel<bits<2> opcod, bits<2> opcod2, dag oops, dag iops, InstrIt
   let Inst{9-8}   = opcod2;
   let Inst{7-4}   = 0b1001;
   let Inst{3-0}   = Rt;
+
+  let mayStore = 1;
 }
 // Atomic load/store instructions
 class AIldrex<bits<2> opcod, dag oops, dag iops, InstrItinClass itin,
@@ -1121,6 +1125,9 @@ class ARMV5MOPat<dag pattern, dag result> : Pat<pattern, result> {
 }
 class ARMV6Pat<dag pattern, dag result> : Pat<pattern, result> {
   list<Predicate> Predicates = [IsARM, HasV6];
+}
+class ARMV6T2Pat<dag pattern, dag result> : Pat<pattern, result> {
+  list<Predicate> Predicates = [IsARM, HasV6T2];
 }
 class VFPPat<dag pattern, dag result> : Pat<pattern, result> {
   list<Predicate> Predicates = [HasVFP2];

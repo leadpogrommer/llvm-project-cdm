@@ -13,12 +13,16 @@
 #ifndef FORTRAN_OPTIMIZER_SUPPORT_INITFIR_H
 #define FORTRAN_OPTIMIZER_SUPPORT_INITFIR_H
 
+#include "flang/Optimizer/Dialect/CUF/CUFDialect.h"
+#include "flang/Optimizer/Dialect/CUF/CUFToLLVMIRTranslation.h"
 #include "flang/Optimizer/Dialect/FIRDialect.h"
 #include "flang/Optimizer/HLFIR/HLFIRDialect.h"
+#include "flang/Optimizer/OpenACC/RegisterOpenACCExtensions.h"
 #include "mlir/Conversion/Passes.h"
 #include "mlir/Dialect/Affine/Passes.h"
 #include "mlir/Dialect/Complex/IR/Complex.h"
 #include "mlir/Dialect/Func/Extensions/InlinerExtension.h"
+#include "mlir/Dialect/LLVMIR/NVVMDialect.h"
 #include "mlir/Dialect/OpenACC/Transforms/Passes.h"
 #include "mlir/InitAllDialects.h"
 #include "mlir/Pass/Pass.h"
@@ -34,7 +38,8 @@ namespace fir::support {
       mlir::scf::SCFDialect, mlir::arith::ArithDialect,                        \
       mlir::cf::ControlFlowDialect, mlir::func::FuncDialect,                   \
       mlir::vector::VectorDialect, mlir::math::MathDialect,                    \
-      mlir::complex::ComplexDialect, mlir::DLTIDialect
+      mlir::complex::ComplexDialect, mlir::DLTIDialect, cuf::CUFDialect,       \
+      mlir::NVVM::NVVMDialect
 
 #define FLANG_CODEGEN_DIALECT_LIST FIRCodeGenDialect, mlir::LLVM::LLVMDialect
 
@@ -45,6 +50,7 @@ namespace fir::support {
 inline void registerNonCodegenDialects(mlir::DialectRegistry &registry) {
   registry.insert<FLANG_NONCODEGEN_DIALECT_LIST>();
   mlir::func::registerInlinerExtension(registry);
+  mlir::LLVM::registerInlinerInterface(registry);
 }
 
 /// Register all the dialects used by flang.
@@ -59,6 +65,8 @@ inline void addFIRExtensions(mlir::DialectRegistry &registry,
   if (addFIRInlinerInterface)
     addFIRInlinerExtension(registry);
   addFIRToLLVMIRExtension(registry);
+  cuf::registerCUFDialectTranslation(registry);
+  fir::acc::registerOpenACCExtensions(registry);
 }
 
 inline void loadNonCodegenDialects(mlir::MLIRContext &context) {
@@ -106,7 +114,7 @@ inline void registerMLIRPassesForFortranTools() {
   mlir::affine::registerAffineLoopTilingPass();
   mlir::affine::registerAffineDataCopyGenerationPass();
 
-  mlir::registerConvertAffineToStandardPass();
+  mlir::registerLowerAffinePass();
 }
 
 /// Register the interfaces needed to lower to LLVM IR.

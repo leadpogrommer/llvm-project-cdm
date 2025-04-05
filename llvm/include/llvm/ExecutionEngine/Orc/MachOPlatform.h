@@ -58,11 +58,18 @@ public:
       uint32_t CompatibilityVersion;
     };
 
+    struct LoadDylibCmd {
+      enum class LoadKind { Default, Weak };
+
+      Dylib D;
+      LoadKind K;
+    };
+
     struct BuildVersionOpts {
 
-      // Derive platform from triple.
-      static BuildVersionOpts fromTriple(const Triple &TT, uint32_t MinOS,
-                                         uint32_t SDK);
+      // Derive platform from triple if possible.
+      static std::optional<BuildVersionOpts>
+      fromTriple(const Triple &TT, uint32_t MinOS, uint32_t SDK);
 
       uint32_t Platform; // Platform.
       uint32_t MinOS;    // X.Y.Z is encoded in nibbles xxxx.yy.zz
@@ -73,13 +80,12 @@ public:
     /// will be used.
     std::optional<Dylib> IDDylib;
 
-    /// Override for LC_BUILD_VERSION. If this is nullopt then
-    std::optional<BuildVersionOpts> BuildVersion;
-
     /// List of LC_LOAD_DYLIBs.
-    std::vector<Dylib> LoadDylibs;
+    std::vector<LoadDylibCmd> LoadDylibs;
     /// List of LC_RPATHs.
     std::vector<std::string> RPaths;
+    /// List of LC_BUILD_VERSIONs.
+    std::vector<BuildVersionOpts> BuildVersions;
 
     HeaderOptions() = default;
     HeaderOptions(Dylib D) : IDDylib(std::move(D)) {}
@@ -134,17 +140,16 @@ public:
   /// RuntimeAliases function, in which case the client is responsible for
   /// setting up all aliases (including the required ones).
   static Expected<std::unique_ptr<MachOPlatform>>
-  Create(ExecutionSession &ES, ObjectLinkingLayer &ObjLinkingLayer,
-         JITDylib &PlatformJD, std::unique_ptr<DefinitionGenerator> OrcRuntime,
+  Create(ObjectLinkingLayer &ObjLinkingLayer, JITDylib &PlatformJD,
+         std::unique_ptr<DefinitionGenerator> OrcRuntime,
          HeaderOptions PlatformJDOpts = {},
          MachOHeaderMUBuilder BuildMachOHeaderMU = buildSimpleMachOHeaderMU,
          std::optional<SymbolAliasMap> RuntimeAliases = std::nullopt);
 
   /// Construct using a path to the ORC runtime.
   static Expected<std::unique_ptr<MachOPlatform>>
-  Create(ExecutionSession &ES, ObjectLinkingLayer &ObjLinkingLayer,
-         JITDylib &PlatformJD, const char *OrcRuntimePath,
-         HeaderOptions PlatformJDOpts = {},
+  Create(ObjectLinkingLayer &ObjLinkingLayer, JITDylib &PlatformJD,
+         const char *OrcRuntimePath, HeaderOptions PlatformJDOpts = {},
          MachOHeaderMUBuilder BuildMachOHeaderMU = buildSimpleMachOHeaderMU,
          std::optional<SymbolAliasMap> RuntimeAliases = std::nullopt);
 
@@ -178,6 +183,11 @@ public:
   static ArrayRef<std::pair<const char *, const char *>>
   standardRuntimeUtilityAliases();
 
+  /// Returns a list of aliases required to enable lazy compilation via the
+  /// ORC runtime.
+  static ArrayRef<std::pair<const char *, const char *>>
+  standardLazyCompilationAliases();
+
 private:
   using SymbolTableVector = SmallVector<
       std::tuple<ExecutorAddr, ExecutorAddr, MachOExecutorSymbolFlags>>;
@@ -203,9 +213,6 @@ private:
                           jitlink::LinkGraph &G,
                           jitlink::PassConfiguration &Config) override;
 
-    SyntheticSymbolDependenciesMap
-    getSyntheticSymbolDependencies(MaterializationResponsibility &MR) override;
-
     // FIXME: We should be tentatively tracking scraped sections and discarding
     // if the MR fails.
     Error notifyFailed(MaterializationResponsibility &MR) override {
@@ -220,9 +227,6 @@ private:
                                      ResourceKey SrcKey) override {}
 
   private:
-    using InitSymbolDepMap =
-        DenseMap<MaterializationResponsibility *, JITLinkSymbolSet>;
-
     struct UnwindSections {
       SmallVector<ExecutorAddrRange> CodeRanges;
       ExecutorAddrRange DwarfSection;
@@ -243,7 +247,6 @@ private:
     };
     using JITSymTabVector = SmallVector<SymbolTablePair>;
 
-    Error bootstrapPipelineStart(jitlink::LinkGraph &G);
     Error bootstrapPipelineRecordRuntimeFunctions(jitlink::LinkGraph &G);
     Error bootstrapPipelineEnd(jitlink::LinkGraph &G);
 
@@ -263,6 +266,7 @@ private:
 
     std::optional<UnwindSections> findUnwindSectionInfo(jitlink::LinkGraph &G);
     Error registerObjectPlatformSections(jitlink::LinkGraph &G, JITDylib &JD,
+                                         ExecutorAddr HeaderAddr,
                                          bool InBootstrapPhase);
 
     Error createObjCRuntimeObject(jitlink::LinkGraph &G);
@@ -283,7 +287,6 @@ private:
     // JITDylibs are removed.
     DenseMap<JITDylib *, ObjCImageInfo> ObjCImageInfos;
     DenseMap<JITDylib *, ExecutorAddr> HeaderAddrs;
-    InitSymbolDepMap InitSymbolDeps;
   };
 
   using GetJITDylibHeaderSendResultFn =
@@ -301,8 +304,7 @@ private:
 
   static MachOExecutorSymbolFlags flagsForSymbol(jitlink::Symbol &Sym);
 
-  MachOPlatform(ExecutionSession &ES, ObjectLinkingLayer &ObjLinkingLayer,
-                JITDylib &PlatformJD,
+  MachOPlatform(ObjectLinkingLayer &ObjLinkingLayer, JITDylib &PlatformJD,
                 std::unique_ptr<DefinitionGenerator> OrcRuntimeGenerator,
                 HeaderOptions PlatformJDOpts,
                 MachOHeaderMUBuilder BuildMachOHeaderMU, Error &Err);
@@ -373,11 +375,11 @@ private:
   DenseMap<JITDylib *, SymbolLookupSet> RegisteredInitSymbols;
 
   std::mutex PlatformMutex;
+  bool ForceEHFrames = false;
+  BootstrapInfo *Bootstrap = nullptr;
   DenseMap<JITDylib *, ExecutorAddr> JITDylibToHeaderAddr;
   DenseMap<ExecutorAddr, JITDylib *> HeaderAddrToJITDylib;
   DenseMap<JITDylib *, uint64_t> JITDylibToPThreadKey;
-
-  std::atomic<BootstrapInfo *> Bootstrap;
 };
 
 // Generates a MachO header.

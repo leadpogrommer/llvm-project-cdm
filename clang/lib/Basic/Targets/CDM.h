@@ -45,8 +45,8 @@ public:
     resetDataLayout("e-S16-p:16:16-i8:8-i16:16-m:C-n16");
   }
 
-  ArrayRef<Builtin::Info> getTargetBuiltins() const override {
-    return std::nullopt;
+  llvm::SmallVector<Builtin::InfosShard> getTargetBuiltins() const override {
+    return llvm::SmallVector<Builtin::InfosShard>();
   }
 
   void getTargetDefines(const LangOptions &Opts,

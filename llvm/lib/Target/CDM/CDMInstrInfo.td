@@ -4,7 +4,7 @@ def SDT_CDMRet          : SDTypeProfile<0, 1, [SDTCisInt<0>]>;
 def CDMRet               : SDNode<"CDMISD::Ret", SDTNone, [SDNPHasChain, SDNPOptInGlue, SDNPVariadic]>;
 
 def SDT_CDMCall    : SDTypeProfile<0, -1, [SDTCisVT<0, iPTR>]>;
-def CDMCall    : SDNode<"CDMISD::Call", SDT_CDMCall, 
+def CDMCall    : SDNode<"CDMISD::Call", SDT_CDMCall,
   [SDNPHasChain, SDNPOutGlue, SDNPOptInGlue,
                           SDNPVariadic]
 >;

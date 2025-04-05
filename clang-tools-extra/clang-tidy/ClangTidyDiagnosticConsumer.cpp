@@ -369,7 +369,6 @@ void ClangTidyDiagnosticConsumer::HandleDiagnostic(
     ++Context.Stats.ErrorsIgnoredNOLINT;
     // Ignored a warning, should ignore related notes as well
     LastErrorWasIgnored = true;
-    Context.DiagEngine->Clear();
     for (const auto &Error : SuppressionErrors)
       Context.diag(Error);
     return;
@@ -446,7 +445,6 @@ void ClangTidyDiagnosticConsumer::HandleDiagnostic(
   if (Info.hasSourceManager())
     checkFilters(Info.getLocation(), Info.getSourceManager());
 
-  Context.DiagEngine->Clear();
   for (const auto &Error : SuppressionErrors)
     Context.diag(Error);
 }
@@ -564,7 +562,8 @@ void ClangTidyDiagnosticConsumer::checkFilters(SourceLocation Location,
   StringRef FileName(File->getName());
   LastErrorRelatesToUserCode = LastErrorRelatesToUserCode ||
                                Sources.isInMainFile(Location) ||
-                               getHeaderFilter()->match(FileName);
+                               (getHeaderFilter()->match(FileName) &&
+                                !getExcludeHeaderFilter()->match(FileName));
 
   unsigned LineNumber = Sources.getExpansionLineNumber(Location);
   LastErrorPassesLineFilter =
@@ -576,6 +575,13 @@ llvm::Regex *ClangTidyDiagnosticConsumer::getHeaderFilter() {
     HeaderFilter =
         std::make_unique<llvm::Regex>(*Context.getOptions().HeaderFilterRegex);
   return HeaderFilter.get();
+}
+
+llvm::Regex *ClangTidyDiagnosticConsumer::getExcludeHeaderFilter() {
+  if (!ExcludeHeaderFilter)
+    ExcludeHeaderFilter = std::make_unique<llvm::Regex>(
+        *Context.getOptions().ExcludeHeaderFilterRegex);
+  return ExcludeHeaderFilter.get();
 }
 
 void ClangTidyDiagnosticConsumer::removeIncompatibleErrors() {
