@@ -17,12 +17,7 @@ public:
   explicit CDMFrameLowering(const CDMSubtarget &Sti): TargetFrameLowering(StackGrowsDown, Align(2), 0, Align(2)), STI(Sti){}
   void emitPrologue(MachineFunction &MF,
                     MachineBasicBlock &MBB) const override;
-  void emitEpilogue(MachineFunction &MF,
-                    MachineBasicBlock &MBB) const override;
-  bool hasFP(const MachineFunction &MF) const override {
-    // TODO: stub
-    return false;
-  }
+  void emitEpilogue(MachineFunction &MF, MachineBasicBlock &MBB) const override;
 
   // Eliminate ADJCALLSTACKDOWN, ADJCALLSTACKUP pseudo instructions
   MachineBasicBlock::iterator

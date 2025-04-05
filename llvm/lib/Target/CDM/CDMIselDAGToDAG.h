@@ -18,10 +18,8 @@ class CDMDagToDagIsel : public  SelectionDAGISel {
 public:
   static char ID;
 
-  explicit CDMDagToDagIsel(CDMTargetMachine &TM): SelectionDAGISel(ID, TM){}
+  explicit CDMDagToDagIsel(CDMTargetMachine &TM) : SelectionDAGISel(TM) {}
 
-
-  StringRef getPassName() const override;
   bool runOnMachineFunction(MachineFunction &MF) override;
 
 private:

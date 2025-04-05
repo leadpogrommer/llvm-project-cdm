@@ -58,7 +58,7 @@ void CDMInstPrinter::printMemOperand(const MCInst *MI, unsigned int OpNo,
   }
   printOperand(MI, OpNo, O);
 }
-void CDMInstPrinter::printRegName(raw_ostream &OS, MCRegister Reg) const {
+void CDMInstPrinter::printRegName(raw_ostream &OS, MCRegister Reg) {
   OS << StringRef(const_cast<CDMInstPrinter*>(this)->getRegisterName(Reg));
 }
 void CDMInstPrinter::printCondCode(const MCInst *MI, unsigned int OpNo,

@@ -41,7 +41,7 @@ class CDMAsmTargetStreamer: public MCTargetStreamer {
 public:
   explicit CDMAsmTargetStreamer(MCStreamer &S);
   void changeSection(const MCSection *CurSection, MCSection *Section,
-                     const MCExpr *SubSection, raw_ostream &OS) override;
+                     uint32_t SubSection, raw_ostream &OS) override;
   void emitLabel(MCSymbol *Symbol) override;
 };
 

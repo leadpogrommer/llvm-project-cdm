@@ -150,10 +150,10 @@ CDMISelLowering::LowerReturn(SDValue Chain, CallingConv::ID CallConv,
   return DAG.getNode(CDMISD::Ret, DL, MVT::Other, RetOps);
 }
 
-
-bool CDMISelLowering::CanLowerReturn(CallingConv::ID CallingConv, MachineFunction &MF, bool IsVarArg,
-                                     const SmallVectorImpl<ISD::OutputArg> &Outs,
-                                     LLVMContext &Context) const {
+bool CDMISelLowering::CanLowerReturn(
+    CallingConv::ID CallingConv, MachineFunction &MF, bool IsVarArg,
+    const SmallVectorImpl<ISD::OutputArg> &Outs, LLVMContext &Context,
+    const Type *RetTy) const {
   SmallVector<CCValAssign, 16> RVLocs;
   CCState CCInfo(CallingConv,IsVarArg, MF, RVLocs, Context);
   return CCInfo.CheckReturn(Outs, RetCC_CDM);

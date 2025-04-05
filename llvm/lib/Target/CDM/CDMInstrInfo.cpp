@@ -21,10 +21,13 @@ CDMInstrInfo::CDMInstrInfo(): CDMGenInstrInfo(CDM::ADJCALLSTACKDOWN, CDM::ADJCAL
 
 
 // needed for loading/saving regs in prologue/epilogue
-void CDMInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
+void CDMInstrInfo::storeRegToStackSlot(MachineBasicBlock &MBB,
+                                       MachineBasicBlock::iterator I,
                                        Register SrcReg, bool isKill, int FI,
-                                       const TargetRegisterClass *RC, const TargetRegisterInfo *TRI,
-                                       Register VReg) const {
+                                       const TargetRegisterClass *RC,
+                                       const TargetRegisterInfo *TRI,
+                                       Register VReg,
+                                       MachineInstr::MIFlag Flags) const {
   DebugLoc DL;
   MachineMemOperand *MMO = GetMemOperand(MBB, FI, MachineMemOperand::MOStore);
 
@@ -49,7 +52,8 @@ void CDMInstrInfo::loadRegFromStackSlot(MachineBasicBlock &MBB,
                                         Register DestReg, int FrameIndex,
                                         const TargetRegisterClass *RC,
                                         const TargetRegisterInfo *TRI,
-                                        Register VReg) const {
+                                        Register VReg,
+                                        MachineInstr::MIFlag Flags) const {
   DebugLoc DL;
   if (MI != MBB.end()) DL = MI->getDebugLoc();
   MachineMemOperand *MMO = GetMemOperand(MBB, FrameIndex, MachineMemOperand::MOLoad);
@@ -82,9 +86,10 @@ void CDMInstrInfo::expandRet(MachineBasicBlock &MBB,
 }
 void CDMInstrInfo::copyPhysReg(MachineBasicBlock &MBB,
                                MachineBasicBlock::iterator MI,
-                               const DebugLoc &DL, MCRegister DestReg,
-                               MCRegister SrcReg, bool KillSrc) const {
-//  TargetInstrInfo::copyPhysReg(MBB, MI, DL, DestReg, SrcReg, KillSrc);
+                               const DebugLoc &DL, Register DestReg,
+                               Register SrcReg, bool KillSrc,
+                               bool RenamableDest, bool RenamableSrc) const {
+  //  TargetInstrInfo::copyPhysReg(MBB, MI, DL, DestReg, SrcReg, KillSrc);
   assert(CDM::CPURegsRegClass.contains(SrcReg) && CDM::CPURegsRegClass.contains(DestReg) && "Can only copy General purpose regs");
   // TODO: check order
   MachineInstrBuilder MIB = BuildMI(MBB, MI, DL, get(CDM::MOVE));

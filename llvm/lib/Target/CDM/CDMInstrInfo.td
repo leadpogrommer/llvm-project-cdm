@@ -10,10 +10,14 @@ def CDMCall    : SDNode<"CDMISD::Call", SDT_CDMCall,
 >;
 
 // TODO: select addr not on frame (CDMDagToDagIsel)
-def addr_on_frame: ComplexPattern<iPTR, 2, "SelectAddrFrameIndex", [frameindex], [SDNPWantParent]>;
+def addr_on_frame: ComplexPattern<iPTR, 2, "SelectAddrFrameIndex", [frameindex]> {
+  let WantsParent = true;
+}
 
 def addrRR: ComplexPattern<iPTR, 2, "SelectAddrRR", [], []>;
-def addr: ComplexPattern<iPTR, 2, "SelectAddr", [], [SDNPWantParent]>;
+def addr: ComplexPattern<iPTR, 2, "SelectAddr", []> {
+  let WantsParent = true;
+}
 
 class CDMInst<dag outs, dag ins, string asmstr, list<dag> pattern>: Instruction
 {

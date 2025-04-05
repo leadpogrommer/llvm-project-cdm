@@ -21,7 +21,6 @@ using namespace llvm;
 #define DEBUG_TYPE "cdm-isel"
 
 char CDMDagToDagIsel::ID = 0;
-StringRef CDMDagToDagIsel::getPassName() const { return "CDM DAG->DAG Bullshit Instruction Selection"; }
 void CDMDagToDagIsel::Select(SDNode *N) {
 
   if(N->isMachineOpcode()) {

@@ -1,14 +1,13 @@
 #ifndef LLVM_LIB_TARGET_CDM_CDMTARGETMACHINE_H
 #define LLVM_LIB_TARGET_CDM_CDMTARGETMACHINE_H
 
-
 #include "CDMSubtarget.h"
+#include "llvm/CodeGen/CodeGenTargetMachineImpl.h"
 #include "llvm/Target/TargetMachine.h"
-
 
 namespace llvm{
 
-class CDMTargetMachine: public LLVMTargetMachine{
+class CDMTargetMachine : public CodeGenTargetMachineImpl {
   std::unique_ptr<TargetLoweringObjectFile> TLOF;
   const DataLayout dataLayout;
   CDMSubtarget DefaultSubtarget;
