@@ -12,11 +12,10 @@
 
 #include "llvm/CodeGen/SelectionDAGISel.h"
 
-
 namespace llvm{
 class CDMDagToDagIsel : public  SelectionDAGISel {
 public:
-  static char ID;
+  CDMDagToDagIsel() = delete;
 
   explicit CDMDagToDagIsel(CDMTargetMachine &TM) : SelectionDAGISel(TM) {}
 
@@ -34,10 +33,15 @@ private:
   bool SelectBRCOND(SDNode *N);
 };
 
+class CDMDagToDagIselLegacy : public SelectionDAGISelLegacy {
+public:
+  static char ID;
+  explicit CDMDagToDagIselLegacy(CDMTargetMachine &tm)
+      : SelectionDAGISelLegacy(ID, std::make_unique<CDMDagToDagIsel>(tm)) {}
+};
+
 FunctionPass *createCDMISelDag(CDMTargetMachine &TM, CodeGenOptLevel OptLevel);
 
 } // namespace llvm
-
-
 
 #endif // LLVM_CDMISELDAGTODAG_H

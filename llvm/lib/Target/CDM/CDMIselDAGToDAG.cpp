@@ -19,8 +19,9 @@
 using namespace llvm;
 
 #define DEBUG_TYPE "cdm-isel"
+#define PASS_NAME "CDM DAG->DAG Pattern Instruction Selection"
 
-char CDMDagToDagIsel::ID = 0;
+char CDMDagToDagIselLegacy::ID = 0;
 void CDMDagToDagIsel::Select(SDNode *N) {
 
   if(N->isMachineOpcode()) {
@@ -164,5 +165,5 @@ bool CDMDagToDagIsel::SelectAddrRR(SDValue Addr, SDValue &Base, SDValue &Offset)
 }
 
 FunctionPass *llvm::createCDMISelDag(llvm::CDMTargetMachine &TM, CodeGenOptLevel OptLevel) {
-  return new CDMDagToDagIsel(TM);
+  return new CDMDagToDagIselLegacy(TM);
 }

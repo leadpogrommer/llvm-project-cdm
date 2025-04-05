@@ -30,9 +30,10 @@ CDMTargetMachine::CDMTargetMachine(const Target &T, const Triple &TT,
                                    std::optional<Reloc::Model> RM,
                                    std::optional<CodeModel::Model> CM,
                                    CodeGenOptLevel OL, bool JIT)
-    : LLVMTargetMachine(T, computeDataLayout(), TT, CPU, FS,Options, Reloc::Static, CodeModel::Small, OL),
-      TLOF(std::make_unique<CDMTargetObjectFile>()), dataLayout(computeDataLayout()), DefaultSubtarget(TT, CPU, FS, *this)
-{
+    : CodeGenTargetMachineImpl(T, computeDataLayout(), TT, CPU, FS, Options,
+                               Reloc::Static, CodeModel::Small, OL),
+      TLOF(std::make_unique<CDMTargetObjectFile>()),
+      dataLayout(computeDataLayout()), DefaultSubtarget(TT, CPU, FS, *this) {
   initAsmInfo();
 //  Options.EmitAddrsig = false;
 }
