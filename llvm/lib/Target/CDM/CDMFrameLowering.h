@@ -5,19 +5,18 @@
 #ifndef LLVM_CDMFRAMELOWERING_H
 #define LLVM_CDMFRAMELOWERING_H
 
-
 #include "CDM.h"
 #include "llvm/CodeGen/TargetFrameLowering.h"
 
 namespace llvm {
 class CDMSubtarget;
-class CDMFrameLowering: public TargetFrameLowering {
+class CDMFrameLowering : public TargetFrameLowering {
 public:
-
-  explicit CDMFrameLowering(const CDMSubtarget &Sti): TargetFrameLowering(StackGrowsDown, Align(2), 0, Align(2)), STI(Sti){}
-  void emitPrologue(MachineFunction &MF,
-                    MachineBasicBlock &MBB) const override;
+  explicit CDMFrameLowering(const CDMSubtarget &Sti)
+      : TargetFrameLowering(StackGrowsDown, Align(2), 0, Align(2)), STI(Sti) {}
+  void emitPrologue(MachineFunction &MF, MachineBasicBlock &MBB) const override;
   void emitEpilogue(MachineFunction &MF, MachineBasicBlock &MBB) const override;
+  bool hasFPImpl(const MachineFunction &MF) const override;
 
   // Eliminate ADJCALLSTACKDOWN, ADJCALLSTACKUP pseudo instructions
   MachineBasicBlock::iterator
@@ -25,6 +24,7 @@ public:
                                 MachineBasicBlock::iterator MI) const override {
     return MBB.erase(MI);
   }
+
 private:
   const CDMSubtarget &STI;
 };

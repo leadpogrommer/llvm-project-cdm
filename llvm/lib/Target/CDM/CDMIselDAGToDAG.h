@@ -11,6 +11,7 @@
 #include "CDMSubtarget.h"
 
 #include "llvm/CodeGen/SelectionDAGISel.h"
+#include "llvm/Pass.h"
 
 namespace llvm{
 class CDMDagToDagIsel : public  SelectionDAGISel {
@@ -21,9 +22,6 @@ public:
 
   bool runOnMachineFunction(MachineFunction &MF) override;
 
-private:
-  #include "CDMGenDAGISel.inc"
-
   void Select(SDNode *N) override;
   bool trySelect(SDNode *Node);
   bool SelectAddrFrameIndex(SDNode *Parent, SDValue Addr, SDValue &Base, SDValue &Offset);
@@ -31,6 +29,8 @@ private:
   bool SelectAddrRR(SDValue Addr, SDValue &Base, SDValue &Offset);
   bool SelectConditionalBranch(SDNode *N);
   bool SelectBRCOND(SDNode *N);
+
+  #include "CDMGenDAGISel.inc"
 };
 
 class CDMDagToDagIselLegacy : public SelectionDAGISelLegacy {
@@ -39,6 +39,8 @@ public:
   explicit CDMDagToDagIselLegacy(CDMTargetMachine &tm)
       : SelectionDAGISelLegacy(ID, std::make_unique<CDMDagToDagIsel>(tm)) {}
 };
+
+void initializeCDMDagToDagIselLegacyPass(PassRegistry &);
 
 FunctionPass *createCDMISelDag(CDMTargetMachine &TM, CodeGenOptLevel OptLevel);
 

@@ -22,6 +22,9 @@ using namespace llvm;
 #define PASS_NAME "CDM DAG->DAG Pattern Instruction Selection"
 
 char CDMDagToDagIselLegacy::ID = 0;
+
+INITIALIZE_PASS(CDMDagToDagIselLegacy, DEBUG_TYPE, PASS_NAME, false, false)
+
 void CDMDagToDagIsel::Select(SDNode *N) {
 
   if(N->isMachineOpcode()) {
