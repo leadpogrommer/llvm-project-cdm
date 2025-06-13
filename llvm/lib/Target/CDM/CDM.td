@@ -6,10 +6,7 @@ include "CDMCallingConv.td"
 def CDMInstrInfo : InstrInfo;
 
 // TODO: fill this out
-def CDMGenericItineraries: ProcessorItineraries<[], [], []>;
+def CDMGenericItineraries : ProcessorItineraries<[], [], []>;
 def : Processor<"cdm", CDMGenericItineraries, []>;
 
-
-def CDM : Target {
-  let InstructionSet = CDMInstrInfo;
-}
+def CDM : Target { let InstructionSet = CDMInstrInfo; }

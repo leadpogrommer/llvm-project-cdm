@@ -4,30 +4,31 @@
 
 #include "CDMMCInstLower.h"
 
+#include "CDMAsmPrinter.h"
+#include "llvm/CodeGen/AsmPrinter.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineInstr.h"
 #include "llvm/CodeGen/MachineOperand.h"
-#include "CDMAsmPrinter.h"
+#include "llvm/MC/MCExpr.h"
 
 namespace llvm {
-CDMMCInstLower::CDMMCInstLower(CDMAsmPrinter &asmPrinter): AsmPrinter(asmPrinter) {}
-void CDMMCInstLower::Initialize(MCContext *C) {
-  Ctx = C;
-}
-void CDMMCInstLower::Lower(const MachineInstr *MI, MCInst &OutMI) const {
+CDMMCInstLower::CDMMCInstLower(CDMAsmPrinter &AsmPrinter)
+    : AsmPrinter(AsmPrinter) {}
+void CDMMCInstLower::initialize(MCContext *C) { Ctx = C; }
+void CDMMCInstLower::lower(const MachineInstr *MI, MCInst &OutMI) const {
   OutMI.setOpcode(MI->getOpcode());
-  
-  for(unsigned i = 0, e = MI->getNumOperands(); i != e; i++){
-    const MachineOperand &MO = MI->getOperand(i);
-    MCOperand MCOp = LowerOperand(MO);
-    
-    if(MCOp.isValid()){
+
+  for (unsigned I = 0, E = MI->getNumOperands(); I != E; I++) {
+    const MachineOperand &MO = MI->getOperand(I);
+    MCOperand MCOp = lowerOperand(MO);
+
+    if (MCOp.isValid()) {
       OutMI.addOperand(MCOp);
     }
   }
 }
-MCOperand CDMMCInstLower::LowerOperand(const MachineOperand &MO,
-                                       int offset) const {
+MCOperand CDMMCInstLower::lowerOperand(const MachineOperand &MO,
+                                       int Offset) const {
   auto MOType = MO.getType();
   switch (MOType) {
   default:
@@ -42,16 +43,14 @@ MCOperand CDMMCInstLower::LowerOperand(const MachineOperand &MO,
   case MachineOperand::MO_GlobalAddress:
   case MachineOperand::MO_ExternalSymbol:
   case MachineOperand::MO_JumpTableIndex:
-    return LowerSymbolOperand(MO, offset);
+    return lowerSymbolOperand(MO, Offset);
   }
   return MCOperand();
 }
-MCOperand CDMMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
+MCOperand CDMMCInstLower::lowerSymbolOperand(const MachineOperand &MO,
                                              int Offset) const {
-  MCSymbolRefExpr::VariantKind Kind = MCSymbolRefExpr::VK_None;
-  const MCSymbol *Symbol;
-
-
+  MCSymbolRefExpr::VariantKind Kind = (MCSymbolRefExpr::VariantKind)MO.getTargetFlags();
+  const MCSymbol *Symbol = nullptr;
 
   switch (MO.getType()) {
   case MachineOperand::MO_ExternalSymbol:
@@ -67,11 +66,11 @@ MCOperand CDMMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
     Symbol = MO.getMBB()->getSymbol();
     break;
 
-//  case MachineOperand::MO_BlockAddress:
-//    Symbol = AsmPrinter.GetBlockAddressSymbol(MO.getBlockAddress());
-//    Offset += MO.getOffset();
-//    break;
-//
+    //  case MachineOperand::MO_BlockAddress:
+    //    Symbol = AsmPrinter.GetBlockAddressSymbol(MO.getBlockAddress());
+    //    Offset += MO.getOffset();
+    //    break;
+    //
   case MachineOperand::MO_JumpTableIndex:
     Symbol = AsmPrinter.GetJTISymbol(MO.getIndex());
     break;
@@ -84,12 +83,13 @@ MCOperand CDMMCInstLower::LowerSymbolOperand(const MachineOperand &MO,
 
   if (Offset) {
     // Assume offset is never negative.
-//    llvm_unreachable("I am still unsure what is an offset");
+    //    llvm_unreachable("I am still unsure what is an offset");
 
-    Expr = Offset > 0 ? MCBinaryExpr::createAdd(Expr, MCConstantExpr::create(Offset, *Ctx),
-                                   *Ctx) : MCBinaryExpr::createSub(Expr, MCConstantExpr::create(-Offset, *Ctx), *Ctx);
+    Expr = Offset > 0 ? MCBinaryExpr::createAdd(
+                            Expr, MCConstantExpr::create(Offset, *Ctx), *Ctx)
+                      : MCBinaryExpr::createSub(
+                            Expr, MCConstantExpr::create(-Offset, *Ctx), *Ctx);
   }
-
 
   return MCOperand::createExpr(Expr);
 }

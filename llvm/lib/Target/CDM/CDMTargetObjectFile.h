@@ -8,7 +8,7 @@
 #include "llvm/CodeGen/TargetLoweringObjectFileImpl.h"
 namespace llvm {
 
-class CDMTargetObjectFile : public TargetLoweringObjectFileELF{
+class CDMTargetObjectFile : public TargetLoweringObjectFileELF {
 public:
   void Initialize(MCContext &Ctx, const TargetMachine &TM) override;
 };

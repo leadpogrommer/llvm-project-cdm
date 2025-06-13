@@ -6,7 +6,6 @@
 #define LLVM_CDMINSTRINFO_H
 
 #include "CDMRegisterInfo.h"
-#include "llvm/CodeGen/MachineInstrBuilder.h"
 #include "llvm/CodeGen/TargetInstrInfo.h"
 #include <map>
 
@@ -16,7 +15,7 @@
 
 namespace llvm {
 
-namespace CDMCOND{
+namespace CDMCOND {
 enum CondOp {
   // signed
   LT, // <
@@ -36,21 +35,17 @@ enum CondOp {
 
 };
 
-
-
-
 } // namespace CDMCOND
 
-class CDMInstrInfo: public CDMGenInstrInfo {
+class CDMInstrInfo : public CDMGenInstrInfo {
 public:
   explicit CDMInstrInfo();
 
-  const CDMRegisterInfo &getRegisterInfo() const {
-    return RI;
-  }
-  void storeRegToStackSlot(MachineBasicBlock &MBB, MachineBasicBlock::iterator I,
-                           Register SrcReg, bool isKill, int FI,
-                           const TargetRegisterClass *RC, const TargetRegisterInfo *TRI,
+  const CDMRegisterInfo &getRegisterInfo() const { return RI; }
+  void storeRegToStackSlot(MachineBasicBlock &MBB,
+                           MachineBasicBlock::iterator I, Register SrcReg,
+                           bool IsKill, int FI, const TargetRegisterClass *RC,
+                           const TargetRegisterInfo *TRI,
                            Register VReg) const override;
   void loadRegFromStackSlot(MachineBasicBlock &MBB,
                             MachineBasicBlock::iterator MI, Register DestReg,
@@ -63,11 +58,10 @@ public:
                    const DebugLoc &DL, MCRegister DestReg, MCRegister SrcReg,
                    bool KillSrc) const override;
 
-  void adjustStackPtr(int64_t Amount,
-                                       MachineBasicBlock &MBB,
-                                       MachineBasicBlock::iterator I) const;
+  void adjustStackPtr(int64_t Amount, MachineBasicBlock &MBB,
+                      MachineBasicBlock::iterator I) const;
   CDMCOND::CondOp CCToCondOp(ISD::CondCode CC) const {
-    if(!CondMap.count(CC)){
+    if (!CondMap.count(CC)) {
       llvm_unreachable("Unknown branch condition");
     }
     return CondMap.at(CC);
@@ -88,11 +82,9 @@ private:
   };
   const CDMRegisterInfo RI;
 
-
   MachineMemOperand *GetMemOperand(MachineBasicBlock &MBB, int FI,
-                               MachineMemOperand::Flags Flags) const;
-  void expandRet(MachineBasicBlock &MBB,
-                 MachineBasicBlock::iterator I) const;
+                                   MachineMemOperand::Flags Flags) const;
+  void expandRet(MachineBasicBlock &MBB, MachineBasicBlock::iterator I) const;
 };
 
 } // namespace llvm

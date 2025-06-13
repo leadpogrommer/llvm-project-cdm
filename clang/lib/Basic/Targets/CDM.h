@@ -8,32 +8,31 @@
 
 namespace clang {
 namespace targets {
-class LLVM_LIBRARY_VISIBILITY CDMTargetInfo : public TargetInfo{
+class LLVM_LIBRARY_VISIBILITY CDMTargetInfo : public TargetInfo {
 public:
   CDMTargetInfo(const llvm::Triple &Triple, const TargetOptions &)
-      : TargetInfo(Triple){
+      : TargetInfo(Triple) {
     TLSSupported = false;
     PointerWidth = 16;
-    // TODO: check whether it is true
     PointerAlign = 8;
     IntWidth = 16;
     IntAlign = 16;
     LongWidth = 32;
-    LongAlign = 32;
-    LongLongWidth = 32;
-    LongLongAlign = 32;
+    LongAlign = 16;
+    LongLongWidth = 64;
+    LongLongAlign = 16;
     SuitableAlign = 8;
     DefaultAlignForAttributeAligned = 8;
     HalfWidth = 16;
     HalfAlign = 16;
     FloatWidth = 32;
-    FloatAlign = 8;
-    DoubleWidth = 32;
-    DoubleAlign = 8;
-    DoubleFormat = &llvm::APFloat::IEEEsingle();
-    LongDoubleWidth = 32;
-    LongDoubleAlign = 8;
-    LongDoubleFormat = &llvm::APFloat::IEEEsingle();
+    FloatAlign = 16;
+    DoubleWidth = 64;
+    DoubleAlign = 16;
+    DoubleFormat = &llvm::APFloat::IEEEdouble();
+    LongDoubleWidth = 128;
+    LongDoubleAlign = 16;
+    LongDoubleFormat = &llvm::APFloat::IEEEquad();
     SizeType = UnsignedInt;
     PtrDiffType = SignedInt;
     IntPtrType = SignedInt;
@@ -42,7 +41,8 @@ public:
     Int16Type = SignedInt;
     Char32Type = UnsignedLong;
     SigAtomicType = SignedChar;
-    resetDataLayout("e-S16-p:16:16-i8:8-i16:16-m:C-n16");
+    resetDataLayout("e-S16-p:16:16-i8:8-i16:16-i32:16-i64:16-f16:16-f32:16-"
+                    "f128:16-m:C-n16");
   }
 
   ArrayRef<Builtin::Info> getTargetBuiltins() const override {
@@ -50,16 +50,16 @@ public:
   }
 
   void getTargetDefines(const LangOptions &Opts,
-                        MacroBuilder &Builder) const override{
+                        MacroBuilder &Builder) const override {
     Builder.defineMacro("__AVR__");
   }
 
   std::string_view getClobbers() const override { return ""; }
 
   ArrayRef<const char *> getGCCRegNames() const override {
-    static const char *const GCCRegNames[] = {
-        // TOOD: should sp be there?
-        "r0",  "r1",  "r2",  "r3",  "r4",  "r5",  "r6",  "r7","SP"};
+    static const char *const GCCRegNames[] = {// TOOD: should sp be there?
+                                              "r0", "r1", "r2", "r3", "r4",
+                                              "r5", "r6", "r7", "SP"};
     return llvm::ArrayRef(GCCRegNames);
   }
 
@@ -73,7 +73,6 @@ public:
     if (StringRef(Name).size() > 1)
       return false;
 
-
     // TODO: no asm fo you :(
     return false;
   }
@@ -82,12 +81,12 @@ public:
   }
   CallingConvCheckResult checkCallingConvention(CallingConv CC) const override {
     switch (CC) {
-      default:
-        return CCCR_Error;
-      case CC_C:
-      case CC_CdmIsr:
-        return CCCR_OK;
-      }
+    default:
+      return CCCR_Error;
+    case CC_C:
+    case CC_CdmIsr:
+      return CCCR_OK;
+    }
   }
 };
 } // namespace targets

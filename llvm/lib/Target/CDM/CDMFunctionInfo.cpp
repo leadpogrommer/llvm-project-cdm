@@ -4,4 +4,8 @@
 
 #include "CDMFunctionInfo.h"
 
-namespace llvm {} // namespace llvm
+namespace llvm {
+
+void CDMFunctionInfo::anchor() {}
+
+} // namespace llvm

@@ -1,3 +1,2 @@
-emu_out/*.json
-out_asm/*.asm
-out_bin/*.bin
+__pycache__
+build

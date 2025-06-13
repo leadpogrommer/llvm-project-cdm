@@ -13,7 +13,6 @@
 #include "llvm/Support/ErrorHandling.h"
 #include "llvm/Support/raw_ostream.h"
 
-
 using namespace llvm;
 #define PRINT_ALIAS_INSTR
 #include "CDMGenAsmWriter.inc"
@@ -39,41 +38,33 @@ void CDMInstPrinter::printOperand(const MCInst *MI, unsigned int OpNo,
     O << Op.getImm();
     return;
   }
-  if(Op.isExpr()) {
-        Op.getExpr()
-            ->print(O, &MAI, false);
-//    O << Op.getExpr()->dump();
+  if (Op.isExpr()) {
+    Op.getExpr()->print(O, &MAI, false);
+    //    O << Op.getExpr()->dump();
     return;
   }
-
-
 
   llvm_unreachable("Unknown operand type");
 }
 
 void CDMInstPrinter::printMemOperand(const MCInst *MI, unsigned int OpNo,
                                      raw_ostream &O) {
-  if(MI->getOperand(OpNo + 1).isImm()){
-    assert(MI->getOperand(OpNo + 1).getImm() == 0 && "Mem operand can't have non-zero offset");
+  if (MI->getOperand(OpNo + 1).isImm()) {
+    assert(MI->getOperand(OpNo + 1).getImm() == 0 &&
+           "Mem operand can't have non-zero offset");
   }
   printOperand(MI, OpNo, O);
 }
 void CDMInstPrinter::printRegName(raw_ostream &OS, MCRegister Reg) const {
-  OS << StringRef(const_cast<CDMInstPrinter*>(this)->getRegisterName(Reg));
+  OS << StringRef(const_cast<CDMInstPrinter *>(this)->getRegisterName(Reg));
 }
 void CDMInstPrinter::printCondCode(const MCInst *MI, unsigned int OpNo,
                                    raw_ostream &O) {
   using namespace llvm;
   std::map<CDMCOND::CondOp, std::string> CondMap = {
-      {CDMCOND::LT, "lt"},
-      {CDMCOND::LE, "le"},
-      {CDMCOND::GT, "gt"},
-      {CDMCOND::GE, "ge"},
-      {CDMCOND::LO, "lo"},
-      {CDMCOND::LS, "ls"},
-      {CDMCOND::HI, "hi"},
-      {CDMCOND::HS, "hs"},
-      {CDMCOND::EQ, "eq"},
+      {CDMCOND::LT, "lt"}, {CDMCOND::LE, "le"}, {CDMCOND::GT, "gt"},
+      {CDMCOND::GE, "ge"}, {CDMCOND::LO, "lo"}, {CDMCOND::LS, "ls"},
+      {CDMCOND::HI, "hi"}, {CDMCOND::HS, "hs"}, {CDMCOND::EQ, "eq"},
       {CDMCOND::NE, "ne"},
   };
   O << CondMap.at((CDMCOND::CondOp)MI->getOperand(OpNo).getImm());

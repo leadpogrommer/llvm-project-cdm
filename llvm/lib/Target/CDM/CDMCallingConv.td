@@ -1,16 +1,12 @@
-def CC_CDM : CallingConv<[
-  CCIfType<[i8], CCPromoteToType<i16>>,
-  CCIfType<[i16], CCAssignToReg<[R0, R1, R2, R3]>>,
-  CCIfType<[i16], CCAssignToStack<2, 2>>,
+def CC_CDM : CallingConv<[CCIfType<[i8], CCPromoteToType<i16>>,
+                          CCIfType<[i16], CCAssignToReg<[R0, R1, R2, R3]>>,
+                          CCAssignToStack<2, 2>,
 ]>;
 
 def RetCC_CDM : CallingConv<[
-  // i16 are returned in register(s)
-  CCIfType<[i16], CCAssignToReg<[R0, R1, R2, R3]>>
-]>;
+                    // i16 are returned in register(s)
+                    CCIfType<[i16], CCAssignToReg<[R0, R1, R2, R3]>>]>;
 
-def CSR_O16 : CalleeSavedRegs<(add FP,
-                                   (sequence "R%u", 4, 6))>;
+def CSR_O16 : CalleeSavedRegs<(add FP, (sequence "R%u", 4, 6))>;
 
-def CSR_O16_ALL : CalleeSavedRegs<(add FP,
-(sequence "R%u", 0, 6))>;
+def CSR_O16_ALL : CalleeSavedRegs<(add FP, (sequence "R%u", 0, 6))>;

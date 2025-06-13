@@ -6,5 +6,4 @@ class Target;
 
 Target &getTheCDMTarget();
 
-
 } // namespace llvm

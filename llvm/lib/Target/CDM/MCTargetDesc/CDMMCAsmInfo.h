@@ -9,7 +9,7 @@
 #include "llvm/TargetParser/Triple.h"
 namespace llvm {
 
-class CDMMCAsmInfo: public MCAsmInfo {
+class CDMMCAsmInfo : public MCAsmInfo {
 public:
   explicit CDMMCAsmInfo(const Triple &TheTriple);
 };
