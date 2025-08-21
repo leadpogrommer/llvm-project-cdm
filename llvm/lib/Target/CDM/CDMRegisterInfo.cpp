@@ -1,6 +1,15 @@
 //
 // Created by ilya on 21.11.23.
 //
+#include "MCTargetDesc/CDMMCTargetDesc.h"
+#include "llvm/CodeGen/MachineBasicBlock.h"
+#include "llvm/CodeGen/MachineInstr.h"
+#include "llvm/CodeGen/MachineInstrBuilder.h"
+#include "llvm/CodeGen/MachineMemOperand.h"
+#include "llvm/CodeGen/TargetRegisterInfo.h"
+#include "llvm/MC/MCInstrInfo.h"
+#include "llvm/Support/Casting.h"
+#include <fstream>
 #define DEBUG_TYPE "cdm-reg-info"
 
 #include "CDMRegisterInfo.h"
@@ -9,6 +18,7 @@
 #include "llvm/CodeGen/MachineFrameInfo.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/TargetSubtargetInfo.h"
+#include "llvm/CodeGen/RegisterScavenging.h"
 #include "llvm/IR/Function.h"
 #include "llvm/IR/Type.h"
 #include "llvm/Support/Debug.h"
@@ -17,6 +27,7 @@
 
 #define GET_REGINFO_TARGET_DESC
 #include "CDMGenRegisterInfo.inc"
+#include "CDMInstrInfo.h"
 
 namespace llvm {
 
@@ -65,9 +76,46 @@ bool CDMRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   uint64_t StackSize = MF.getFrameInfo().getStackSize();
   int64_t SpOffset = MF.getFrameInfo().getObjectOffset(FrameIndex);
 
+  std::ofstream deletethis("deletethis.log", std::ios::app);
+  deletethis << "Offset: " << SpOffset << std::endl;
+
   LLVM_DEBUG(errs() << "FrameIndex : " << FrameIndex << "\n"
                     << "spOffset   : " << SpOffset << "\n"
                     << "stackSize  : " << StackSize << "\n");
+
+  // If the immediate operand of ssw, lsw, ssb, lsb, sssb, lssb
+  // is out of bounds, perform a substitution
+  if ((MI.getOpcode() == CDM::ssw ||
+       MI.getOpcode() == CDM::ssw ||
+       MI.getOpcode() == CDM::ssw ||
+       MI.getOpcode() == CDM::ssw ||
+       MI.getOpcode() == CDM::ssw ||
+       MI.getOpcode() == CDM::ssw) && 
+       (SpOffset > 127 || SpOffset < -128) && RS) {
+    Register TmpReg = RS->scavengeRegisterBackwards(CDM::CPURegsRegClass, II, true, 2, true), SrcReg;
+    RS->setRegUsed(TmpReg);
+    MachineBasicBlock &MBB = *MI.getParent();
+
+    unsigned I = 0;
+    while (!MI.getOperand(I).isReg()) {
+        ++I;
+    }
+    SrcReg = MI.getOperand(I).getReg();
+
+    BuildMI(MBB, II, II->getDebugLoc(), 
+            MF.getSubtarget().getInstrInfo()->get(CDM::ldi), TmpReg)
+        .addImm(SpOffset);
+    BuildMI(MBB, II, II->getDebugLoc(),
+            MF.getSubtarget().getInstrInfo()->get(CDM::stwRR))
+        .addReg(SrcReg)
+        .addReg(TmpReg)
+        .addReg(MF.getSubtarget().getRegisterInfo()->getFrameRegister(MF))
+        .addImm(0);
+    MI.getParent()->erase(II);
+    return true;
+  }
+  deletethis.close();
+
   // TODO: acknowledge saved regs and other stuff
   // TODO: handle incoming arguments
   MI.getOperand(I).ChangeToImmediate(SpOffset);
