@@ -22,6 +22,9 @@ public:
                            unsigned int FIOperandNum,
                            RegScavenger *RS) const override;
   Register getFrameRegister(const MachineFunction &MF) const override;
+  bool requiresRegisterScavenging(const MachineFunction &MF) const override {
+    return true;
+  }
 
 private:
   const uint32_t *getCallPreservedMask(const MachineFunction &MF,
