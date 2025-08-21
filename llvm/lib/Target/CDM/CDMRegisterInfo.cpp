@@ -9,7 +9,6 @@
 #include "llvm/CodeGen/TargetRegisterInfo.h"
 #include "llvm/MC/MCInstrInfo.h"
 #include "llvm/Support/Casting.h"
-#include <fstream>
 #define DEBUG_TYPE "cdm-reg-info"
 
 #include "CDMRegisterInfo.h"
@@ -76,25 +75,24 @@ bool CDMRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
   uint64_t StackSize = MF.getFrameInfo().getStackSize();
   int64_t SpOffset = MF.getFrameInfo().getObjectOffset(FrameIndex);
 
-  std::ofstream deletethis("deletethis.log", std::ios::app);
-  deletethis << "Offset: " << SpOffset << std::endl;
-
   LLVM_DEBUG(errs() << "FrameIndex : " << FrameIndex << "\n"
                     << "spOffset   : " << SpOffset << "\n"
                     << "stackSize  : " << StackSize << "\n");
 
-  // If the immediate operand of ssw, lsw, ssb, lsb, sssb, lssb
+  // If the immediate operand of ssw, lsw, ssb, lsb, lssb
   // is out of bounds, perform a substitution
-  if ((MI.getOpcode() == CDM::ssw ||
-       MI.getOpcode() == CDM::ssw ||
-       MI.getOpcode() == CDM::ssw ||
-       MI.getOpcode() == CDM::ssw ||
-       MI.getOpcode() == CDM::ssw ||
-       MI.getOpcode() == CDM::ssw) && 
-       (SpOffset > 127 || SpOffset < -128) && RS) {
-    Register TmpReg = RS->scavengeRegisterBackwards(CDM::CPURegsRegClass, II, true, 2, true), SrcReg;
+  if (((MI.getOpcode() == CDM::ssw ||
+       MI.getOpcode() == CDM::lsw) && (SpOffset > 127 || SpOffset < -128)) ||
+       ((MI.getOpcode() == CDM::ssb ||
+       MI.getOpcode() == CDM::lsb ||
+       MI.getOpcode() == CDM::lssb) && (SpOffset > 63 || SpOffset < -64))) {
+    if (!RS) {
+        llvm_unreachable("RegScavenger must be initialised");
+    }
+
+    Register TmpReg, SrcReg;
+    TmpReg = RS->scavengeRegisterBackwards(CDM::CPURegsRegClass, II, true, 2, true);
     RS->setRegUsed(TmpReg);
-    MachineBasicBlock &MBB = *MI.getParent();
 
     unsigned I = 0;
     while (!MI.getOperand(I).isReg()) {
@@ -102,19 +100,40 @@ bool CDMRegisterInfo::eliminateFrameIndex(MachineBasicBlock::iterator II,
     }
     SrcReg = MI.getOperand(I).getReg();
 
+    MachineBasicBlock &MBB = *MI.getParent();
     BuildMI(MBB, II, II->getDebugLoc(), 
             MF.getSubtarget().getInstrInfo()->get(CDM::ldi), TmpReg)
         .addImm(SpOffset);
+
+    int substitutionOpc;
+    switch (MI.getOpcode()) {
+    case CDM::ssw:
+        substitutionOpc = CDM::stwRR;
+        break;
+    case CDM::lsw:
+        substitutionOpc = CDM::ldwRR;
+        break;
+    case CDM::ssb:
+        substitutionOpc = CDM::stbRR;
+        break;
+    case CDM::lsb:
+        substitutionOpc = CDM::ldbRR;
+        break;
+    case CDM::lssb:
+        substitutionOpc = CDM::ldsbRR;
+        break;
+    }
+
     BuildMI(MBB, II, II->getDebugLoc(),
-            MF.getSubtarget().getInstrInfo()->get(CDM::stwRR))
+            MF.getSubtarget().getInstrInfo()->get(substitutionOpc))
         .addReg(SrcReg)
         .addReg(TmpReg)
         .addReg(MF.getSubtarget().getRegisterInfo()->getFrameRegister(MF))
         .addImm(0);
+
     MI.getParent()->erase(II);
-    return true;
+    return true; // original instruction is removed
   }
-  deletethis.close();
 
   // TODO: acknowledge saved regs and other stuff
   // TODO: handle incoming arguments
